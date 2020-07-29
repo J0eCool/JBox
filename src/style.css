@@ -1,0 +1,18 @@
+body {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+
+    background-color: #346;
+    color: #f0f3cd;
+}
+
+#canvas {
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+}

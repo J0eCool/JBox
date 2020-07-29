@@ -1,0 +1,13 @@
+{
+    "folders": [{
+       "path": ".",
+        "file_exclude_patterns": [
+            "out/*.html",
+        ],
+    }],
+    "build_systems": [{
+        "name": "Builder",
+        "cmd": ["bash", "-c", "python src/builder.py"],
+        "working_dir": "$project_path",
+    }],
+}
