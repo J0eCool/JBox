@@ -5,8 +5,21 @@ async function run() {
     let i32s = new Uint32Array(image.data.buffer);
 
     let canvas = {
-        setPixel(x, y, val) {
-            i32s[x + y*elem.width] = val;
+        updateImage(buffer) {
+            console.log('buvfer:', buffer);
+            // i32s.set(new Uint32Array(buffer));
+            let inc = new Uint32Array(buffer);
+            for (let i = 0; i < i32s.length; ++i) {
+                i32s[i] = inc[i];
+                // i32s[i] = 0x44556600 + 0xff * i / i32s.length;
+            }
+            // image.data.set(i32s);
+        },
+        testy(buffer) {
+            console.log(buffer);
+        },
+        log(msg, x) {
+            console.log(msg, x);
         },
     };
 

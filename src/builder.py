@@ -26,6 +26,17 @@ def has_changed(filename):
     LAST_EDIT[filename] = cur
     return cur > built
 
+def changed_in_dir(feef):
+    ret = False
+    for path, _, files in os.walk(feef):
+        for name in files:
+            base, ext = os.path.splitext(name)
+            filename = os.path.join(path, name)
+            if has_changed(filename):
+                # don't early-return to update the cached time for all files
+                ret = True
+    return ret
+
 def run_cmd(msg, cmd, cwd=None):
     log(msg, cmd)
     try:
@@ -33,21 +44,20 @@ def run_cmd(msg, cmd, cwd=None):
     except Exception as e:
         log('ERROR:', e)
 
+
 ########## program start
 
 node = subprocess.Popen(['node', '../src/server.js'], cwd=os.path.join(projectpath, 'out'))
 try:
     while True:
         should_build = False
-        for path, _, files in os.walk('src'):
-            for name in files:
-                base, ext = os.path.splitext(name)
-                filename = os.path.join(path, name)
-                if has_changed(filename):
-                    should_build = True
+        if changed_in_dir('src'):
+            should_build = True
+        if changed_in_dir('../it-tools/src'):
+            should_build = True
         if should_build:
             run_cmd('building', [MAKE, 'build'], cwd=projectpath)
-        time.sleep(0.5)
+        time.sleep(1.0)
 finally:
     # make sure to clean up the node process handle
     node.terminate()

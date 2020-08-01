@@ -15,12 +15,12 @@ serve: build
 out:
 	mkdir -p out
 
-out/%.cpp out/%.itl: src/%.cpp
-	python $(IT_TOOLS)/cpp_itl_generator.py $< --cpp out/$*.cpp --itl out/$*.itl --wasm $*.wasm
+it_tools: $(IT_TOOLS)/*
 
-out/%.wasm: out/%.cpp out/%.itl
+out/%.wasm out/%.itl: src/%.cpp
+	python $(IT_TOOLS)/cpp_itl_generator.py src/$*.cpp --cpp out/$*.cpp --itl out/$*.itl --wasm $*.wasm
 	python $(IT_TOOLS)/adapter.py out/$*.itl -o out/$*.js
-	emcc $< -o out/$*.wasm -O1 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -Iout -I. -std=c++11 --no-entry --profiling-funcs
+	emcc out/$*.cpp -o out/$*.wasm -O1 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -Iout -I. -std=c++11 --no-entry --profiling-funcs
 	wasm2wat out/$*.wasm -o out/$*.wat
 	wasm-decompile out/$*.wasm -o out/$*.wade
 
