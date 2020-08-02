@@ -1,6 +1,7 @@
 IT_TOOLS=../it-tools/src
 FILES=out/index.html out/style.css out/shell.js \
 out/circles.wasm \
+out/life.wasm \
 
 build: out $(FILES)
 

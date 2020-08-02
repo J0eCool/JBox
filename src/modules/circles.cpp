@@ -5,7 +5,7 @@ import "graphics" {
 }
 export {
     func init(s32, s32);
-    func run();
+    func frame();
 }
 
 /**IT_END**/
@@ -48,7 +48,7 @@ int circle(Point center, Point p, int r) {
 
 int width = 800;
 int height = 600;
-Buffer<int> pixels(10);
+Buffer<int> pixels(0);
 
 // int t = 1 << 28;
 int t = 0;
@@ -59,7 +59,7 @@ void init(int w, int h) {
     pixels = Buffer<int>(w * h);
 }
 
-void run() {
+void frame() {
     Point A(120, 130);
     Point B(190 + t * 7 / 5, 180);
     Point C(275, 140 + t);

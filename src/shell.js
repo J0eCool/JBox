@@ -8,11 +8,16 @@ let graphics = {
         image.data.set(new Uint8Array(buffer));
     },
 };
+let math = {
+    rand() {
+        return Math.random();
+    },
+};
 
-async function runCircles() {
+async function run(component) {
     // internal resolution; separate from the canvas resolution
-    let w = 800;
-    let h = 600;
+    let w = 400;
+    let h = 300;
     image = new ImageData(w, h);
 
     // scaling factor, manages the ratio from internal to canvas resolution
@@ -20,8 +25,9 @@ async function runCircles() {
     let sh = canvas.height / h;
 
     // Load modules
-    let wasm = await circlesComponent.instantiate({
+    let wasm = await component.instantiate({
         graphics,
+        math,
     });
 
     wasm.init(w, h);
@@ -38,4 +44,5 @@ async function runCircles() {
     requestAnimationFrame(frame);
 }
 
-runCircles();
+// run(circlesComponent);
+run(lifeComponent);
