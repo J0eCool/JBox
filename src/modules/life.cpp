@@ -15,41 +15,37 @@ export {
 
 #include <math.h>
 
-int rgb(int r, int g, int b) {
-    int a = 0xff;
-    return ((0xff & a) << 0x18)
-        | ((0xff & r) << 0x00)
-        | ((0xff & g) << 0x08)
-        | ((0xff & b) << 0x10)
-        ;
-}
+#include "common.h"
 
 int width = 800;
 int height = 600;
 
-Buffer<int> *curr, *back;
+PixelBuffer *curr, *back;
 
-int white = rgb(0xff, 0xff, 0xff);
-int black = rgb(0, 0, 0);
+const int nColors = 3;
+const int colors[nColors] = { red, blue, green };
 
 void init(int w, int h) {
     width = w;
     height = h;
-    curr = new Buffer<int>(w * h);
-    back = new Buffer<int>(w * h);
+    curr = new PixelBuffer(w, h);
+    back = new PixelBuffer(w, h);
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            (*curr)[x + y*width] = (rnd() < 0.35) ? white : black;
+            curr->ref(x, y) =
+                ((rnd() < 0.35) ? red : black) |
+                ((rnd() < 0.35) ? green : black) |
+                ((rnd() < 0.35) ? blue : black);
         }
     }
 }
 
-inline int isAlive(int x, int y) {
-    return (*back)[x + y*width] == white;
+inline bool isAlive(int x, int y, int mask) {
+    return back->ref(x, y) & (mask & 0x00ffffff);
 }
 
-int countNeighbors(int x, int y) {
+int countNeighbors(int x, int y, int mask) {
     int nAlive = 0;
 
     // // cooler way to do it for cool kids
@@ -63,7 +59,7 @@ int countNeighbors(int x, int y) {
         int i = (x + dx + width) % width;
         for (int dy = -1; dy <= 1; ++dy) {
             int j = (y + dy + height) % height;
-            if (isAlive(i, j) && (dx != 0 || dy != 0)) {
+            if (isAlive(i, j, mask) && (dx != 0 || dy != 0)) {
                 nAlive++;
             }
         }
@@ -87,8 +83,11 @@ void frame() {
         int j = int(y + height * (1.5 + sin(s) / 3)) % height;
         for (int x = 0; x < 30; ++x) {
             int i = int(x + width * (1.5 + cos(s) / 3)) % width;
-            if (rnd() < 0.3) {
-                (*back)[(i + j*width)] = (rnd() < 0.5) ? white : black;
+            for (int k = 0; k < nColors; ++k) {
+                int color = colors[k];
+                if (rnd() < 0.3) {
+                    (*back)[(i + j*width)] |= color;
+                }
             }
         }
     }
@@ -96,12 +95,15 @@ void frame() {
     // Update Game of Life
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            int nAlive = countNeighbors(x, y);
             int next = black;
-            if (isAlive(x, y) && (nAlive == 2 || nAlive == 3)) {
-                next = white;
-            } else if (!isAlive(x, y) && nAlive == 3) {
-                next = white;
+            for (int i = 0; i < nColors; ++i) {
+                int color = colors[i];
+                int nAlive = countNeighbors(x, y, color);
+                if (isAlive(x, y, color) && (nAlive == 2 || nAlive == 3)) {
+                    next |= color;
+                } else if (!isAlive(x, y, color) && nAlive == 3) {
+                    next |= color;
+                }
             }
             (*curr)[x + y*width] = next;
         }

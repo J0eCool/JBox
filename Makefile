@@ -23,7 +23,7 @@ out/%.wasm out/%.itl: src/modules/%.cpp
 	python $(IT_TOOLS)/adapter.py out/$*.itl -o out/$*.js
 	emcc out/$*.cpp -o out/$*.wasm -O1 \
 		-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s TOTAL_MEMORY=256MB \
-		-Iout -I. -std=c++11 --no-entry --profiling-funcs
+		-Iout -Isrc/modules -std=c++11 --no-entry --profiling-funcs
 	wasm2wat out/$*.wasm -o out/$*.wat
 	wasm-decompile out/$*.wasm -o out/$*.wade
 

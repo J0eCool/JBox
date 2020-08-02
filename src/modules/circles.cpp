@@ -12,34 +12,7 @@ export {
 
 #include <math.h>
 
-struct Point {
-    int x, y;
-    Point(int _x, int _y) : x(_x), y(_y) {}
-
-    #define BINOP(op) \
-    Point operator op(Point const& p) const { \
-        return Point(x op p.x, y op p.y); \
-    }
-    BINOP(+)
-    BINOP(-)
-    BINOP(*)
-
-    int size2() const {
-        return x * x + y * y;
-    }
-    int size() const {
-        return sqrt(size2());
-    }
-};
-
-int rgb(int r, int g, int b) {
-    int a = 0xff;
-    return ((0xff & a) << 0x18)
-        | ((0xff & r) << 0x00)
-        | ((0xff & g) << 0x08)
-        | ((0xff & b) << 0x10)
-        ;
-}
+#include "common.h"
 
 int circle(Point center, Point p, int r) {
     int dist = (p - center).size2();
