@@ -1,6 +1,6 @@
 IT_TOOLS=../it-tools/src
 FILES=out/index.html out/style.css out/shell.js \
-out/image.wasm \
+out/circles.wasm \
 
 build: out $(FILES)
 
@@ -17,8 +17,8 @@ out:
 
 it_tools: $(IT_TOOLS)/*
 
-out/%.wasm out/%.itl: src/%.cpp
-	python $(IT_TOOLS)/cpp_itl_generator.py src/$*.cpp --cpp out/$*.cpp --itl out/$*.itl --wasm $*.wasm
+out/%.wasm out/%.itl: src/modules/%.cpp
+	python $(IT_TOOLS)/cpp_itl_generator.py src/modules/$*.cpp --cpp out/$*.cpp --itl out/$*.itl --wasm $*.wasm
 	python $(IT_TOOLS)/adapter.py out/$*.itl -o out/$*.js
 	emcc out/$*.cpp -o out/$*.wasm -O1 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -Iout -I. -std=c++11 --no-entry --profiling-funcs
 	wasm2wat out/$*.wasm -o out/$*.wat

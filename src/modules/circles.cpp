@@ -1,6 +1,6 @@
 /**IT_START**/
 
-import "canvas" {
+import "graphics" {
     func updateImage(buffer);
 }
 export {
