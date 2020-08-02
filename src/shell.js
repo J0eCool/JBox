@@ -9,7 +9,7 @@ let graphics = {
     },
 };
 let math = {
-    rand() {
+    rnd() {
         return Math.random();
     },
 };

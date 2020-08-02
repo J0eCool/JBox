@@ -4,7 +4,7 @@ import "graphics" {
     func updateImage(buffer);
 }
 import "math" {
-    func rand() -> f32;
+    func rnd() -> f32;
 }
 export {
     func init(s32, s32);
@@ -12,6 +12,8 @@ export {
 }
 
 /**IT_END**/
+
+#include <math.h>
 
 int rgb(int r, int g, int b) {
     int a = 0xff;
@@ -25,25 +27,26 @@ int rgb(int r, int g, int b) {
 int width = 800;
 int height = 600;
 
-Buffer<int> pixels(0);
+Buffer<int> *curr, *back;
 
-int white = rgb(0xcf, 0xaf, 0xff);
+int white = rgb(0xff, 0xff, 0xff);
 int black = rgb(0, 0, 0);
 
 void init(int w, int h) {
     width = w;
     height = h;
-    pixels = Buffer<int>(w * h);
+    curr = new Buffer<int>(w * h);
+    back = new Buffer<int>(w * h);
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            pixels[x + y*width] = (rand() < 0.15) ? white : black;
+            (*curr)[x + y*width] = (rnd() < 0.35) ? white : black;
         }
     }
 }
 
 inline int isAlive(int x, int y) {
-    return pixels[x + y*width] == white;
+    return (*back)[x + y*width] == white;
 }
 
 int countNeighbors(int x, int y) {
@@ -53,7 +56,7 @@ int countNeighbors(int x, int y) {
     // int deltas[8] = { -1, 1, -width, width, -1-width, -1+width, 1-width, 1+width };
     // int p = x + y*width;
     // for (int i = 0; i < 8; ++i) {
-    //     nAlive += (pixels[(p + deltas[i]) % (width*height)] == white);
+    //     nAlive += ((*back)[(p + deltas[i]) % (width*height)] == white);
     // }
 
     for (int dx = -1; dx <= 1; ++dx) {
@@ -71,7 +74,26 @@ int countNeighbors(int x, int y) {
 int t = 0;
 void frame() {
     t++;
-    if (t % 3) return;
+    // if (t % 2) return;
+
+    // swap the buffers
+    auto temp = back;
+    back = curr;
+    curr = temp;
+
+    // Randomize part of it
+    float s = 3.14 * t / 60;
+    for (int y = 0; y < 30; ++y) {
+        int j = int(y + height * (1.5 + sin(s) / 3)) % height;
+        for (int x = 0; x < 30; ++x) {
+            int i = int(x + width * (1.5 + cos(s) / 3)) % width;
+            if (rnd() < 0.3) {
+                (*back)[(i + j*width)] = (rnd() < 0.5) ? white : black;
+            }
+        }
+    }
+
+    // Update Game of Life
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             int nAlive = countNeighbors(x, y);
@@ -81,9 +103,9 @@ void frame() {
             } else if (!isAlive(x, y) && nAlive == 3) {
                 next = white;
             }
-            pixels[x + y*width] = next;
+            (*curr)[x + y*width] = next;
         }
     }
 
-    updateImage(pixels);
+    updateImage(*curr);
 }
