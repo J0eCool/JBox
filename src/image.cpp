@@ -1,35 +1,7 @@
-#include <malloc.h>
-
-void* malloc(unsigned int);
-
-class ITBuffer {
-    int size;
-    void* data;
-public:
-    ITBuffer(int n, void* d) : size(n), data(d) {}
-};
-
-template <typename T, int N>
-class Buffer {
-    T* data;
-public:
-    Buffer() : data((T*)malloc(N * sizeof(T))) {}
-
-    T& operator[](int idx) {
-        return data[idx];
-    }
-
-    operator ITBuffer() const {
-        return ITBuffer(N * sizeof(T), data);
-    }
-};
-
 /**IT_START**/
 
 import "canvas" {
     func updateImage(buffer);
-    func testy(buffer);
-    func log(string, u32);
 }
 export {
     func run();
@@ -66,9 +38,6 @@ const int numPixels = width * height;
 class PixelBuffer : public Buffer<int, numPixels> {
 public:
     void setPixel(int x, int y, int color) {
-        if (x + y * width > numPixels - 6000) {
-            log("YO", color);
-        }
         (*this)[x + y * width] = color;
     }
 };
@@ -83,40 +52,29 @@ int rgb(int r, int g, int b) {
 }
 
 int circle(Point center, Point p, int r) {
-    int dist = (p - center).size();
-    return (dist <= r);
+    int dist = (p - center).size2();
+    return r*r / (dist + 1);
 }
 
-void run() {
-    PixelBuffer pixels;
+PixelBuffer pixels;
 
+// int t = 1 << 28;
+int t = 0;
+
+void run() {
     Point A(120, 130);
-    Point B(190, 180);
-    Point C(275, 140);
+    Point B(190 + t * 7 / 5, 180);
+    Point C(275, 140 + t);
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             Point p(x, y);
-            int r = 0xff * circle(A, p, 120);
-            int g = 0xff * circle(B, p, 100);
-            int b = 0xff * circle(C, p, 140);
-            pixels.setPixel(x, y, rgb(r, g, b));
-            // pixels.setPixel(x, y, rgb(x * 0xff / width, 0xff, 0xff));
+            int r = circle(A, p, 120 + t * 3 / 7 + x * y);
+            // pixels.setPixel(x, y, rgb(r, 0, 0));
+            int a = 0xff << 24;
+            pixels.setPixel(x, y, a | r);
         }
     }
-    log("Pixels", pixels[numPixels - 100]);
 
     updateImage(pixels);
-
-    Buffer<int, 4> foo;
-    foo[0] = 2;
-    foo[1] = 3;
-    foo[2] = 5;
-    foo[3] = 7;
-    testy(foo);
-
-    Buffer<char, 3> bar;
-    bar[0] = 32;
-    bar[1] = 12;
-    bar[2] = 6;
-    testy(bar);
+    t += 1000;
 }
