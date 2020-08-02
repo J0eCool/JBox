@@ -4,6 +4,7 @@ import "graphics" {
     func updateImage(buffer);
 }
 export {
+    func init(s32, s32);
     func run();
 }
 
@@ -31,17 +32,6 @@ struct Point {
     }
 };
 
-const int width = 400;
-const int height = 300;
-const int numPixels = width * height;
-
-class PixelBuffer : public Buffer<int, numPixels> {
-public:
-    void setPixel(int x, int y, int color) {
-        (*this)[x + y * width] = color;
-    }
-};
-
 int rgb(int r, int g, int b) {
     int a = 0xff;
     return ((0xff & a) << 0x18)
@@ -56,10 +46,18 @@ int circle(Point center, Point p, int r) {
     return r*r / (dist + 1);
 }
 
-PixelBuffer pixels;
+int width = 800;
+int height = 600;
+Buffer<int> pixels(10);
 
 // int t = 1 << 28;
 int t = 0;
+
+void init(int w, int h) {
+    width = w;
+    height = h;
+    pixels = Buffer<int>(w * h);
+}
 
 void run() {
     Point A(120, 130);
@@ -71,7 +69,7 @@ void run() {
             int r = circle(A, p, 120 + t * 3 / 7 + x * y);
             // pixels.setPixel(x, y, rgb(r, 0, 0));
             int a = 0xff << 24;
-            pixels.setPixel(x, y, a | r);
+            pixels[x + y*width] = a | r;
         }
     }
 

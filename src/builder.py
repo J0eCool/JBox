@@ -10,13 +10,11 @@ MAKE = 'mingw32-make'
 srcpath = os.path.abspath(os.path.dirname(__file__))
 projectpath = os.path.dirname(srcpath)
 
-print 'srcpath:',srcpath
-
 def log(*args):
     now = time.asctime()
     msg = '[{}] {}'.format(now, ' '.join((str(arg) for arg in args)))
     sys.stderr.flush()
-    print msg
+    print(msg)
     sys.stdout.flush()
 
 LAST_EDIT = {}
