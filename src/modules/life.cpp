@@ -23,7 +23,7 @@ int height = 600;
 PixelBuffer *curr, *back;
 
 const int nColors = 3;
-const int colors[nColors] = { red, blue, green };
+const int colors[nColors] = { red, green, blue };
 
 void init(int w, int h) {
     width = w;
@@ -31,18 +31,21 @@ void init(int w, int h) {
     curr = new PixelBuffer(w, h);
     back = new PixelBuffer(w, h);
 
-    // for (int y = 0; y < height; ++y) {
-    //     for (int x = 0; x < width; ++x) {
-    //         curr->ref(x, y) =
-    //             ((rnd() < 0.35) ? red : black) |
-    //             ((rnd() < 0.35) ? green : black) |
-    //             ((rnd() < 0.35) ? blue : black);
-    //     }
-    // }
+    // Init colors
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            curr->ref(x, y) = black;
+                // ((rnd() < 0.35) ? red : black) |
+                // ((rnd() < 0.35) ? green : black) |
+                // ((rnd() < 0.35) ? blue : black);
+        }
+    }
 }
 
 inline bool isAlive(int x, int y, int mask) {
-    return back->ref(x, y) & (mask & 0x00ffffff);
+    // mask off the bottom 24 bits because we're ignoring alpha here
+    auto c = back->ref(x, y) & (mask & 0x00ffffff);
+    return __builtin_popcount(c) == 8;
 }
 
 int countNeighbors(int x, int y, int mask) {
@@ -64,6 +67,8 @@ int countNeighbors(int x, int y, int mask) {
             }
         }
     }
+
+    // check adjacent colors at the same x,y position
     auto m2 = (mask << 8) | ((mask & 0x00ff0000) >> 16);
     if (rnd() < 0.4 && isAlive(x, y, m2)) {
         nAlive++;
@@ -72,10 +77,11 @@ int countNeighbors(int x, int y, int mask) {
     return nAlive;
 }
 
-int t = 0;
 void frame() {
+    static int t = 0;
     t++;
-    // if (t % 2) return;
+    // crude framerate limiting
+    // if (t++ % 2) return;
 
     // swap the buffers
     auto temp = back;
@@ -85,22 +91,28 @@ void frame() {
     // Randomize part of it
     for (int k = 0; k < nColors; ++k) {
         int color = colors[k];
-        float s = 9.14 * t / 60 + TAU * k / nColors;
+        float s = 3.14 * t / 60 + TAU * k / nColors;
         for (int y = 0; y < 30; ++y) {
             int j = int(y + height * (1.5 + sin(s) / 3)) % height;
             for (int x = 0; x < 30; ++x) {
                 int i = int(x + width * (1.5 + cos(s) / 3)) % width;
-                if (rnd() < 0.3) {
-                    (*back)[(i + j*width)] |= color;
+                if (rnd() < 0.07) {
+                    back->ref(i, j) |= color;
                 }
             }
         }
     }
 
     // Update Game of Life
+    const int decay = 3;
+    auto min0 = [](int c) { return c < 0 ? 0 : c; };
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            int next = black;
+            int next = back->ref(x, y);
+            next = rgb(
+                min0((next & 0xff) - decay),
+                min0(((next & 0xff00) >> 8) - decay),
+                min0(((next & 0xff0000) >> 16) - decay));
             for (int i = 0; i < nColors; ++i) {
                 int color = colors[i];
                 int nAlive = countNeighbors(x, y, color);
@@ -110,7 +122,7 @@ void frame() {
                     next |= color;
                 }
             }
-            (*curr)[x + y*width] = next;
+            curr->ref(x, y) = next;
         }
     }
 
