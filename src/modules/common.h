@@ -45,3 +45,6 @@ const int black = rgb(0, 0, 0);
 const int red = rgb(0xff, 0, 0);
 const int green = rgb(0, 0xff, 0);
 const int blue = rgb(0, 0, 0xff);
+
+const float PI = 3.1415926535;
+const float TAU = 2*PI;

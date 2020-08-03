@@ -31,14 +31,14 @@ void init(int w, int h) {
     curr = new PixelBuffer(w, h);
     back = new PixelBuffer(w, h);
 
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            curr->ref(x, y) =
-                ((rnd() < 0.35) ? red : black) |
-                ((rnd() < 0.35) ? green : black) |
-                ((rnd() < 0.35) ? blue : black);
-        }
-    }
+    // for (int y = 0; y < height; ++y) {
+    //     for (int x = 0; x < width; ++x) {
+    //         curr->ref(x, y) =
+    //             ((rnd() < 0.35) ? red : black) |
+    //             ((rnd() < 0.35) ? green : black) |
+    //             ((rnd() < 0.35) ? blue : black);
+    //     }
+    // }
 }
 
 inline bool isAlive(int x, int y, int mask) {
@@ -64,6 +64,11 @@ int countNeighbors(int x, int y, int mask) {
             }
         }
     }
+    auto m2 = (mask << 8) | ((mask & 0x00ff0000) >> 16);
+    if (rnd() < 0.4 && isAlive(x, y, m2)) {
+        nAlive++;
+    }
+
     return nAlive;
 }
 
@@ -78,13 +83,13 @@ void frame() {
     curr = temp;
 
     // Randomize part of it
-    float s = 3.14 * t / 60;
-    for (int y = 0; y < 30; ++y) {
-        int j = int(y + height * (1.5 + sin(s) / 3)) % height;
-        for (int x = 0; x < 30; ++x) {
-            int i = int(x + width * (1.5 + cos(s) / 3)) % width;
-            for (int k = 0; k < nColors; ++k) {
-                int color = colors[k];
+    for (int k = 0; k < nColors; ++k) {
+        int color = colors[k];
+        float s = 9.14 * t / 60 + TAU * k / nColors;
+        for (int y = 0; y < 30; ++y) {
+            int j = int(y + height * (1.5 + sin(s) / 3)) % height;
+            for (int x = 0; x < 30; ++x) {
+                int i = int(x + width * (1.5 + cos(s) / 3)) % width;
                 if (rnd() < 0.3) {
                     (*back)[(i + j*width)] |= color;
                 }
@@ -99,9 +104,9 @@ void frame() {
             for (int i = 0; i < nColors; ++i) {
                 int color = colors[i];
                 int nAlive = countNeighbors(x, y, color);
-                if (isAlive(x, y, color) && (nAlive == 2 || nAlive == 3)) {
+                if (isAlive(x, y, color) && (nAlive >= 2 && nAlive <= 3)) {
                     next |= color;
-                } else if (!isAlive(x, y, color) && nAlive == 3) {
+                } else if (!isAlive(x, y, color) && (nAlive == 3)) {
                     next |= color;
                 }
             }
