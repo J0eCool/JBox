@@ -2,6 +2,10 @@ IT_TOOLS=../it-tools/src
 FILES=out/index.html out/style.css out/shell.js \
 out/circles.wasm \
 out/life.wasm \
+out/terminal.wasm \
+out/textures \
+
+OPT=-O1
 
 build: out $(FILES)
 
@@ -21,7 +25,7 @@ it_tools: $(IT_TOOLS)/*
 out/%.wasm out/%.itl: src/modules/%.cpp
 	python $(IT_TOOLS)/cpp_itl_generator.py src/modules/$*.cpp --cpp out/$*.cpp --itl out/$*.itl --wasm $*.wasm
 	python $(IT_TOOLS)/adapter.py out/$*.itl -o out/$*.js
-	emcc out/$*.cpp -o out/$*.wasm -O3 \
+	emcc out/$*.cpp -o out/$*.wasm $(OPT) \
 		-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s TOTAL_MEMORY=256MB \
 		-Iout -Isrc/modules -std=c++11 --no-entry --profiling-funcs
 	wasm2wat out/$*.wasm -o out/$*.wat
@@ -33,3 +37,6 @@ out/%.css: out src/%.css
 	cp src/$*.css out/$*.css
 out/%.js: out src/%.js
 	cp src/$*.js out/$*.js
+
+out/textures: out assets/textures
+	cp -r assets/textures out/textures

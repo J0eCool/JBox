@@ -1,14 +1,21 @@
 #pragma once
 
+#include <math.h>
+
 class PixelBuffer : public Buffer<int> {
-    int width;
-    int height;
+    int _width;
+    int _height;
 public:
-    PixelBuffer(int w, int h) : Buffer<int>(w*h), width(w), height(h) {}
+    PixelBuffer(int w, int h) : Buffer<int>(w*h), _width(w), _height(h) {}
+    PixelBuffer() : Buffer<int>(0), _width(0), _height(0) {}
+    PixelBuffer(ITBuffer* buffer, int w, int h) : Buffer<int>(buffer, w*h), _width(w), _height(h) {}
 
     int& ref(int x, int y) {
-        return (*this)[x + y*width];
+        return (*this)[x + y*_width];
     }
+
+    int width() const { return _width; }
+    int height() const { return _height; }
 };
 
 struct Point {
@@ -22,6 +29,7 @@ struct Point {
     BINOP(+)
     BINOP(-)
     BINOP(*)
+    #undef BINOP
 
     int size2() const {
         return x * x + y * y;

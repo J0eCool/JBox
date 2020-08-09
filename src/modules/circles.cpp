@@ -46,6 +46,6 @@ void frame() {
         }
     }
 
-    updateImage(pixels);
+    updateImage(&pixels);
     t += 1000;
 }

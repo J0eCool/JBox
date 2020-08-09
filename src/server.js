@@ -4,8 +4,11 @@ const fs = require('fs');
 const port = 8080;
 
 const server = http.createServer((req, res) => {
-    console.log(req.url);
+    console.log('Request at:', req.url);
     let path = './' + req.url;
+    if (req.url === '/') {
+        path = './index.html';
+    }
 
     fs.readFile(path, (err, data) => {
         if (err) {

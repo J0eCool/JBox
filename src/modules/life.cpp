@@ -2,6 +2,7 @@
 
 import "graphics" {
     func updateImage(buffer);
+    func loadImage(string) -> buffer;
 }
 import "math" {
     func rnd() -> f32;
@@ -40,6 +41,8 @@ void init(int w, int h) {
                 // ((rnd() < 0.35) ? blue : black);
         }
     }
+
+    loadImage("textures/font.png");
 }
 
 inline bool isAlive(int x, int y, int mask) {
@@ -104,7 +107,7 @@ void frame() {
     }
 
     // Update Game of Life
-    const int decay = 3;
+    const int decay = 5;
     auto min0 = [](int c) { return c < 0 ? 0 : c; };
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -126,5 +129,5 @@ void frame() {
         }
     }
 
-    updateImage(*curr);
+    updateImage(curr);
 }
