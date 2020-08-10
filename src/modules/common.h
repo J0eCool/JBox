@@ -2,24 +2,9 @@
 
 #include <math.h>
 
-class PixelBuffer : public Buffer<int> {
-    int _width;
-    int _height;
-public:
-    PixelBuffer(int w, int h) : Buffer<int>(w*h), _width(w), _height(h) {}
-    PixelBuffer() : Buffer<int>(0), _width(0), _height(0) {}
-    PixelBuffer(ITBuffer* buffer, int w, int h) : Buffer<int>(buffer, w*h), _width(w), _height(h) {}
-
-    int& ref(int x, int y) {
-        return (*this)[x + y*_width];
-    }
-
-    int width() const { return _width; }
-    int height() const { return _height; }
-};
-
 struct Point {
     int x, y;
+    Point() : x(0), y(0) {}
     Point(int _x, int _y) : x(_x), y(_y) {}
 
     #define BINOP(op) \
@@ -37,6 +22,25 @@ struct Point {
     int size() const {
         return sqrt(size2());
     }
+};
+
+class PixelBuffer : public Buffer<int> {
+    int _width;
+    int _height;
+public:
+    PixelBuffer(int w, int h) : Buffer<int>(w*h), _width(w), _height(h) {}
+    PixelBuffer() : Buffer<int>(0), _width(0), _height(0) {}
+    PixelBuffer(ITBuffer* buffer, int w, int h) : Buffer<int>(buffer, w*h), _width(w), _height(h) {}
+
+    int& ref(int x, int y) {
+        return (*(Buffer<int>*)this)[x + y*_width];
+    }
+    int& operator[](Point p) {
+        return ref(p.x, p.y);
+    }
+
+    int width() const { return _width; }
+    int height() const { return _height; }
 };
 
 int rgb(int r, int g, int b) {
