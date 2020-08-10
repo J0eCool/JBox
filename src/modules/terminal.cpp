@@ -58,6 +58,6 @@ void drawText(Point pos, std::string const& text) {
 
 void frame() {
     drawText(Point(40, 40), "Hello world!");
-    drawText(Point(120, 240), "$-#~: We can do <(things)> {now};");
+    drawText(Point(120, 240), "$-#~: We \"can\" do <(thing's)> {now};");
     updateImage(pixels);
 }

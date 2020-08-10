@@ -55,6 +55,12 @@ try:
             should_build = True
         if should_build:
             run_cmd('building', [MAKE, 'build'], cwd=projectpath)
+
+        if changed_in_dir('assets/textures'):
+            log('Copying texture assets')
+            shutil.rmtree('out/textures', ignore_errors=True)
+            shutil.copytree('assets/textures', 'out/textures')
+
         time.sleep(1.0)
 finally:
     # make sure to clean up the node process handle

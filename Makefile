@@ -3,7 +3,6 @@ FILES=out/index.html out/style.css out/shell.js \
 out/circles.wasm \
 out/life.wasm \
 out/terminal.wasm \
-out/textures \
 
 OPT=-O1
 
@@ -37,6 +36,3 @@ out/%.css: out src/%.css
 	cp src/$*.css out/$*.css
 out/%.js: out src/%.js
 	cp src/$*.js out/$*.js
-
-out/textures: out assets/textures
-	cp -r assets/textures out/textures
