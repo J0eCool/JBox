@@ -4,6 +4,10 @@ import "graphics" {
     func updateImage(buffer);
     func loadImage(string) -> buffer;
 }
+import "input" {
+    func log(string, s32);
+    func registerOnKeyDown(func(s32));
+}
 export {
     func init(s32, s32);
     func frame();
@@ -22,7 +26,17 @@ PixelBuffer* pixels;
 PixelBuffer* font;
 Point charSize;
 
+std::string text = "$>";
+
+void onKeyDown(int key) {
+    if ((key >= 'A' && key <= 'Z') || (key >= '0' && key <= '9') || key == ' ') {
+        text += key;
+    }
+}
+
 void init(int w, int h) {
+    registerOnKeyDown(onKeyDown);
+
     width = w;
     height = h;
 
@@ -57,7 +71,6 @@ void drawText(Point pos, std::string const& text) {
 }
 
 void frame() {
-    drawText(Point(40, 40), "Hello world!");
-    drawText(Point(120, 240), "$-#~: We \"can\" do <(thing's)> {now};");
+    drawText(Point(40, 40), text + '|');
     updateImage(pixels);
 }

@@ -5,6 +5,16 @@ let image = new ImageData(canvas.width, canvas.height);
 
 let fontBuffer;
 
+let input = {
+    log(msg, x) {
+        console.log(msg, x);
+    },
+    registerOnKeyDown(callback) {
+        document.onkeydown = (event) => {
+            callback(event.keyCode);
+        };
+    },
+};
 let graphics = {
     updateImage(buffer) {
         image.data.set(new Uint8Array(buffer));
@@ -17,9 +27,6 @@ let graphics = {
     },
     loadImage(url) {
         return fontBuffer;
-    },
-    log(msg, x) {
-        console.log(msg, x);
     },
 };
 let math = {
@@ -37,6 +44,7 @@ async function run(component) {
     // Load modules
     let wasm = await component.instantiate({
         graphics,
+        input,
         math,
     });
 
