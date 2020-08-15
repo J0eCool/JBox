@@ -5,13 +5,34 @@ let image = new ImageData(canvas.width, canvas.height);
 
 let fontBuffer;
 
+function getKeyCode(event) {
+    // Custom enum of key values because what are JS KeyboardEvents even
+    let key = {
+        'Shift': 1,
+        'Control': 2,
+        'Alt': 3,
+        'Enter': 4,
+        'Escape': 5,
+        'Backspace': 6,
+        'Delete': 7,
+    }[event.key];
+    if (key !== undefined) {
+        return key;
+    }
+    return event.key.charCodeAt(0);
+}
 let input = {
     log(msg, x) {
         console.log(msg, x);
     },
     registerOnKeyDown(callback) {
         document.onkeydown = (event) => {
-            callback(event.keyCode);
+            callback(getKeyCode(event));
+        };
+    },
+    registerOnKeyUp(callback) {
+        document.onkeyup = (event) => {
+            callback(getKeyCode(event));
         };
     },
 };
