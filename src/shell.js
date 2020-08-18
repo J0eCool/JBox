@@ -55,19 +55,41 @@ let math = {
         return Math.random();
     },
 };
+let wasm = {
+    loadModule(name, callback) {
+        let components = {
+            'circles': circlesComponent,
+            'life': lifeComponent,
+            'terminal': terminalComponent,
+        }
+        return components[name].instantiate(allImports).then((mod) => {
+            callback(mod);
+            return mod;
+        });
+    },
+    callInit(mod, x, y) {
+        mod.init(x, y);
+    },
+    callFrame(mod) {
+        mod.frame();
+    },
+};
 
-async function run(component) {
+let allImports = {
+    graphics,
+    input,
+    math,
+    wasm,
+};
+
+async function run() {
     // internal resolution; separate from the canvas resolution
     let w = 400;
     let h = 300;
     image = new ImageData(w, h);
 
     // Load modules
-    let wasm = await component.instantiate({
-        graphics,
-        input,
-        math,
-    });
+    let mod = await wasm.loadModule('terminal', () => {});
 
     // Load font asset
     // TODO: figure out some callback-based API
@@ -81,16 +103,14 @@ async function run(component) {
     let offImg = offCtx.getImageData(0, 0, img.width, img.height);
     fontBuffer = offImg.data.buffer.slice();
 
-    wasm.init(w, h);
+    mod.init(w, h);
 
     function frame() {
-        wasm.frame();
+        mod.frame();
 
         requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
 }
 
-// run(circlesComponent);
-// run(lifeComponent);
-run(terminalComponent);
+run();

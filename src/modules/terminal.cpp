@@ -10,7 +10,9 @@ import "input" {
     func registerOnKeyUp(func(s32));
 }
 import "wasm" {
-    // func loadModule(string, func(ref));
+    func loadModule(string, func(ref));
+    func callInit(ref, s32, s32);
+    func callFrame(ref);
 }
 export {
     func init(s32, s32);
@@ -34,20 +36,16 @@ std::string text = "";
 bool isShiftHeld = false;
 bool isCtrlHeld = false;
 
+void* module = nullptr;
+void onModuleLoad(void* mod) {
+    log("Loaded module!", (int)mod);
+    module = mod;
+    callInit(module, width, height);
+}
+
 void onKeyDown(int key) {
-    // if (key >= 'A' && key <= 'Z') {
-    //     text += key + (!isShiftHeld * ('a' - 'A'));
-    // } else if (key >= '0' && key <= '9') {
-    //     if (!isShiftHeld) {
-    //         text += key;
-    //     } else {
-    //         // symbols corresponding to 0-9 (with QWERTY I guess)
-    //         const char* symbols = ")!@#$%^&*(";
-    //         text += symbols[key-'0'];
-    //     }
-    // } else
     if (key >= ' ' && key <= '~') {
-        // other keys should just be printable?
+        // keys in this range are printable ASCII
         text += key;
     } else {
         switch (key) {
@@ -57,7 +55,14 @@ void onKeyDown(int key) {
         case 2: // ctrl
             isCtrlHeld = true;
             break;
+        case 4:
+            loadModule(text.c_str(), onModuleLoad);
+            text.clear();
+            break;
         case 5: // escape
+            if (module) {
+                module = nullptr;
+            }
             text.clear();
             break;
         case 6: // backspace
@@ -122,6 +127,10 @@ void drawText(Point pos, std::string const& text) {
 }
 
 void frame() {
+    if (module) {
+        callFrame(module);
+        return;
+    }
     pixels->fill(black);
     drawText(Point(40, 40), "$>" + text + '|');
     updateImage(pixels);
