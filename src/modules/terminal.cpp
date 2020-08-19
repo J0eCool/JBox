@@ -2,7 +2,7 @@
 
 import "graphics" {
     func updateImage(buffer);
-    func loadImage(string) -> buffer;
+    func loadImage(string, func(buffer));
 }
 import "input" {
     func log(string, s32);
@@ -41,6 +41,12 @@ void onModuleLoad(void* mod) {
     log("Loaded module!", (int)mod);
     module = mod;
     callInit(module, width, height);
+}
+
+void onFontLoad(ITBuffer* buffer) {
+    // TODO: fix for hardcoded 96x128 resolution
+    font = new PixelBuffer(buffer, 96, 128);
+    charSize = Point(font->width() / 16, font->height() / 16);
 }
 
 void onKeyDown(int key) {
@@ -105,10 +111,7 @@ void init(int w, int h) {
 
     pixels = new PixelBuffer(w, h);
 
-    // TODO: fix for hardcoded 96x128 resolution
-    auto buff = loadImage("textures/font.png");
-    font = new PixelBuffer(buff, 96, 128);
-    charSize = Point(font->width() / 16, font->height() / 16);
+    loadImage("textures/font.png", onFontLoad);
 }
 
 void drawChar(Point pos, char c) {
@@ -121,6 +124,9 @@ void drawChar(Point pos, char c) {
     }
 }
 void drawText(Point pos, std::string const& text) {
+    if (!font) {
+        return;
+    }
     for (int i = 0; i < text.size(); ++i) {
         drawChar(pos + Point(i * charSize.x, 0), text[i]);
     }

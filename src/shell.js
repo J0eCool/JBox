@@ -3,8 +3,6 @@ let ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 let image = new ImageData(canvas.width, canvas.height);
 
-let fontBuffer;
-
 function getKeyCode(event) {
     // Custom enum of key values because what are JS KeyboardEvents even
     let key = {
@@ -46,8 +44,17 @@ let graphics = {
         let sh = canvas.height / image.height;
         ctx.drawImage(canvas, 0, 0, sw * canvas.width, sh * canvas.height);
     },
-    loadImage(url) {
-        return fontBuffer;
+    loadImage(url, callback) {
+        let img = new Image();
+        img.src = 'textures/font.png';
+        img.decode().then(() => {
+            let off = new OffscreenCanvas(img.width, img.height);
+            let offCtx = off.getContext('2d');
+            // ctx.drawImage(img, 0, 0);
+            offCtx.drawImage(img, 0, 0);
+            let offImg = offCtx.getImageData(0, 0, img.width, img.height);
+            callback(offImg.data.buffer.slice());
+        });
     },
 };
 let math = {
@@ -90,18 +97,6 @@ async function run() {
 
     // Load modules
     let mod = await wasm.loadModule('terminal', () => {});
-
-    // Load font asset
-    // TODO: figure out some callback-based API
-    let img = new Image();
-    img.src = 'textures/font.png';
-    await img.decode();
-    let off = new OffscreenCanvas(img.width, img.height);
-    let offCtx = off.getContext('2d');
-    // ctx.drawImage(img, 0, 0);
-    offCtx.drawImage(img, 0, 0);
-    let offImg = offCtx.getImageData(0, 0, img.width, img.height);
-    fontBuffer = offImg.data.buffer.slice();
 
     mod.init(w, h);
 
