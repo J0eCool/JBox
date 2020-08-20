@@ -1,8 +1,14 @@
 /**IT_START**/
 
+type Image = struct {
+    pixels: buffer;
+    width: s32;
+    height: s32;
+}
+
 import "graphics" {
     func updateImage(buffer);
-    func loadImage(string, func(buffer));
+    func loadImage(string, func(Image));
 }
 import "input" {
     func log(string, s32);
@@ -10,9 +16,9 @@ import "input" {
     func registerOnKeyUp(func(s32));
 }
 import "wasm" {
-    func loadModule(string, func(ref));
-    func callInit(ref, s32, s32);
-    func callFrame(ref);
+    func loadModule(string, func(any));
+    func callInit(any, s32, s32);
+    func callFrame(any);
 }
 export {
     func init(s32, s32);
@@ -38,15 +44,13 @@ bool isCtrlHeld = false;
 
 void* module = nullptr;
 void onModuleLoad(void* mod) {
-    log("Loaded module!", (int)mod);
     module = mod;
     callInit(module, width, height);
 }
 
-void onFontLoad(ITBuffer* buffer) {
-    // TODO: fix for hardcoded 96x128 resolution
-    font = new PixelBuffer(buffer, 96, 128);
-    charSize = Point(font->width() / 16, font->height() / 16);
+void onFontLoad(Image* image) {
+    font = new PixelBuffer(image->pixels, image->width, image->height);
+    charSize = Point(image->width / 16, image->height / 16);
 }
 
 void onKeyDown(int key) {

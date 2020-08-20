@@ -50,10 +50,14 @@ let graphics = {
         img.decode().then(() => {
             let off = new OffscreenCanvas(img.width, img.height);
             let offCtx = off.getContext('2d');
-            // ctx.drawImage(img, 0, 0);
             offCtx.drawImage(img, 0, 0);
             let offImg = offCtx.getImageData(0, 0, img.width, img.height);
-            callback(offImg.data.buffer.slice());
+            let image = {
+                pixels: offImg.data.buffer.slice(),
+                width: img.width,
+                height: img.height,
+            };
+            callback(image);
         });
     },
 };
