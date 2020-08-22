@@ -15,8 +15,15 @@ import "input" {
     func registerOnKeyDown(func(s32));
     func registerOnKeyUp(func(s32));
 }
+import "objects" {
+    func copy(any) -> any;
+    func getField(any, string) -> any;
+    // TODO: overloading support
+    func setField(any, string, func(buffer));
+}
 import "wasm" {
-    func loadModule(string, func(any));
+    func getLoadedModules() -> any;
+    func loadModule(string, any, func(any));
     func callInit(any, s32, s32);
     func callFrame(any);
 }
@@ -38,19 +45,40 @@ PixelBuffer* pixels;
 PixelBuffer* font;
 Point charSize;
 
-std::string text = "";
+std::string text = "circles";
 bool isShiftHeld = false;
 bool isCtrlHeld = false;
+
+int subWidth = 320;
+int subHeight = 240;
 
 void* module = nullptr;
 void onModuleLoad(void* mod) {
     module = mod;
-    callInit(module, width, height);
+    callInit(module, subWidth, subHeight);
 }
 
 void onFontLoad(Image* image) {
     font = new PixelBuffer(image->pixels, image->width, image->height);
     charSize = Point(image->width / 16, image->height / 16);
+}
+
+void updateSubImage(ITBuffer* buffer) {
+    auto sub = PixelBuffer(buffer, subWidth, subHeight);
+    for (int j = 0; j < subHeight; ++j) {
+        for (int i = 0; i < subWidth; ++i) {
+            pixels->ref(i + 40, j + 30) = sub.ref(i, j);
+        }
+    }
+    delete buffer;
+}
+
+void executeCommand() {
+    void* imports = getLoadedModules();
+    void* graphics = getField(imports, "graphics");
+    setField(graphics, "updateImage", updateSubImage);
+    loadModule(text.c_str(), imports, onModuleLoad);
+    text.clear();
 }
 
 void onKeyDown(int key) {
@@ -66,8 +94,7 @@ void onKeyDown(int key) {
             isCtrlHeld = true;
             break;
         case 4:
-            loadModule(text.c_str(), onModuleLoad);
-            text.clear();
+            executeCommand();
             break;
         case 5: // escape
             if (module) {
@@ -139,6 +166,7 @@ void drawText(Point pos, std::string const& text) {
 void frame() {
     if (module) {
         callFrame(module);
+        updateImage(pixels);
         return;
     }
     pixels->fill(black);

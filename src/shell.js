@@ -46,7 +46,7 @@ let graphics = {
     },
     loadImage(url, callback) {
         let img = new Image();
-        img.src = 'textures/font.png';
+        img.src = url;
         img.decode().then(() => {
             let off = new OffscreenCanvas(img.width, img.height);
             let offCtx = off.getContext('2d');
@@ -66,14 +66,37 @@ let math = {
         return Math.random();
     },
 };
+let objects = {
+    create() {
+        return {};
+    },
+    copy(obj) {
+        return Object.assign({}, obj);
+    },
+    getField(obj, field) {
+        return obj[field];
+    },
+    setField(obj, field, val) {
+        obj[field] = val;
+    },
+};
 let wasm = {
-    loadModule(name, callback) {
+    getLoadedModules() {
+        // make a deepish (2-level) copy
+        let ret = {};
+        for (let k in loadedModules) {
+            ret[k] = Object.assign({}, loadedModules[k]);
+        }
+        return ret;
+    },
+    loadModule(name, imports, callback) {
         let components = {
             'circles': circlesComponent,
             'life': lifeComponent,
             'terminal': terminalComponent,
-        }
-        return components[name].instantiate(allImports).then((mod) => {
+        };
+        return components[name].instantiate(imports).then((mod) => {
+            loadedModules[name] = mod;
             callback(mod);
             return mod;
         });
@@ -86,21 +109,22 @@ let wasm = {
     },
 };
 
-let allImports = {
+let loadedModules = {
     graphics,
     input,
     math,
+    objects,
     wasm,
 };
 
 async function run() {
     // internal resolution; separate from the canvas resolution
-    let w = 400;
-    let h = 300;
+    let w = 800;
+    let h = 600;
     image = new ImageData(w, h);
 
     // Load modules
-    let mod = await wasm.loadModule('terminal', () => {});
+    let mod = await wasm.loadModule('terminal', loadedModules, () => {});
 
     mod.init(w, h);
 

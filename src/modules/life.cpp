@@ -2,7 +2,6 @@
 
 import "graphics" {
     func updateImage(buffer);
-    func loadImage(string) -> buffer;
 }
 import "math" {
     func rnd() -> f32;
@@ -41,8 +40,6 @@ void init(int w, int h) {
                 // ((rnd() < 0.35) ? blue : black);
         }
     }
-
-    loadImage("textures/font.png");
 }
 
 inline bool isAlive(int x, int y, int mask) {
