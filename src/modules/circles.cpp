@@ -1,7 +1,13 @@
 /**IT_START**/
 
-import "graphics" {
-    func updateImage(buffer);
+type Image = struct {
+    pixels: buffer;
+    width: s32;
+    height: s32;
+}
+
+import "imageDrawing" {
+    func updateImage(Image);
 }
 export {
     func init(s32, s32);
@@ -46,6 +52,7 @@ void frame() {
         }
     }
 
-    updateImage(&pixels);
+    Image img(&pixels, width, height);
+    updateImage(&img);
     t += 1000;
 }

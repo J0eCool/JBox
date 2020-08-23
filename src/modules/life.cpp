@@ -1,7 +1,13 @@
 /**IT_START**/
 
-import "graphics" {
-    func updateImage(buffer);
+type Image = struct {
+    pixels: buffer;
+    width: s32;
+    height: s32;
+}
+
+import "imageDrawing" {
+    func updateImage(Image);
 }
 import "math" {
     func rnd() -> f32;
@@ -126,5 +132,6 @@ void frame() {
         }
     }
 
-    updateImage(curr);
+    Image img(curr, width, height);
+    updateImage(&img);
 }

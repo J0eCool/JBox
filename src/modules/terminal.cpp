@@ -6,8 +6,8 @@ type Image = struct {
     height: s32;
 }
 
-import "graphics" {
-    func updateImage(buffer);
+import "imageDrawing" {
+    func updateImage(Image);
     func loadImage(string, func(Image));
 }
 import "input" {
@@ -19,7 +19,7 @@ import "objects" {
     func copy(any) -> any;
     func getField(any, string) -> any;
     // TODO: overloading support
-    func setField(any, string, func(buffer));
+    func setField(any, string, func(Image));
 }
 import "wasm" {
     func getLoadedModules() -> any;
@@ -63,19 +63,19 @@ void onFontLoad(Image* image) {
     charSize = Point(image->width / 16, image->height / 16);
 }
 
-void updateSubImage(ITBuffer* buffer) {
-    auto sub = PixelBuffer(buffer, subWidth, subHeight);
+void updateSubImage(Image* image) {
+    auto sub = PixelBuffer(image->pixels, image->width, image->height);
     for (int j = 0; j < subHeight; ++j) {
         for (int i = 0; i < subWidth; ++i) {
             pixels->ref(i + 40, j + 30) = sub.ref(i, j);
         }
     }
-    delete buffer;
+    delete image;
 }
 
 void executeCommand() {
     void* imports = getLoadedModules();
-    void* graphics = getField(imports, "graphics");
+    void* graphics = getField(imports, "imageDrawing");
     setField(graphics, "updateImage", updateSubImage);
     loadModule(text.c_str(), imports, onModuleLoad);
     text.clear();
@@ -164,12 +164,13 @@ void drawText(Point pos, std::string const& text) {
 }
 
 void frame() {
-    if (module) {
-        callFrame(module);
-        updateImage(pixels);
-        return;
-    }
     pixels->fill(black);
     drawText(Point(40, 40), "$>" + text + '|');
-    updateImage(pixels);
+
+    if (module) {
+        callFrame(module);
+    }
+
+    Image img(pixels, width, height);
+    updateImage(&img);
 }
