@@ -15,15 +15,25 @@ function loadShader(type, source) {
     return shader;
 }
 let vertShaderText = `
-    attribute vec4 vertexPosition;
+    attribute vec4 aVertexPosition;
+    attribute vec2 aTexCoord;
+
+    varying vec2 vTexCoord;
+
     void main() {
-        gl_Position = vertexPosition;
+        gl_Position = aVertexPosition;
+        vTexCoord = aTexCoord;
     }
 `;
 let fragShaderText = `
     precision mediump float;
+
+    uniform sampler2D uImage;
+
+    varying vec2 vTexCoord;
+
     void main() {
-        gl_FragColor = vec4(0.3, 0.7, 0.9, 1.0);
+        gl_FragColor = texture2D(uImage, vTexCoord);
     }
 `;
 let shaderProgram = gl.createProgram();
@@ -36,23 +46,27 @@ if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
 }
 let programInfo = {
     program: shaderProgram,
-    vertexPosition: gl.getAttribLocation(shaderProgram, 'vertexPosition'),
+    vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+    texCoord: gl.getAttribLocation(shaderProgram, 'aTexCoord'),
 };
 
 // quad vbos
-let vert = [
-    -0.5, -0.5,
-    -0.5, 0.5,
-    0.5, 0.5,
-    0.5, -0.5,
-];
 let vertBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vert), gl.STATIC_DRAW);
-let tex = [0.0, 0.0, /**/ 1.0, 0.0, /**/ 1.0, 1.0, /**/ 0.0, 1.0];
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    -1.0, 1.0,
+    1.0, 1.0,
+    1.0, -1.0,
+    -1.0, -1.0,
+]), gl.STATIC_DRAW);
 let texBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(tex), gl.STATIC_DRAW);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    0.0, 0.0,
+    1.0, 0.0,
+    1.0, 1.0,
+    0.0, 1.0,
+]), gl.STATIC_DRAW);
 let imageTex = gl.createTexture();
 
 let resolution = {
@@ -98,25 +112,33 @@ let input = {
 };
 let imageDrawing = {
     updateImage(image) {
-        // gl.viewport(0, 0, canvas.width, canvas.height);
+        // Clear
         gl.clearColor(0, 0, 0, 1);
         // gl.clearDepth(1.0);
         // gl.enable(gl.DEPTH_TEST);
-        gl.depthFunc(gl.LEQUAL);
-
+        // gl.depthFunc(gl.LEQUAL);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        gl.useProgram(programInfo.program);
+        // Copy image data to GPU
+        gl.bindTexture(gl.TEXTURE_2D, imageTex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, image.width, image.height, 0,
+            gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(image.pixels));
 
+        // Set shader attributes
+        gl.useProgram(programInfo.program);
         gl.enableVertexAttribArray(programInfo.vertexPosition);
         gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
         gl.vertexAttribPointer(programInfo.vertexPosition, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(programInfo.texCoord);
+        gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
+        gl.vertexAttribPointer(programInfo.texCoord, 2, gl.FLOAT, false, 0, 0);
 
+        // Draw
         gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-
-        // gl.bindTexture(gl.TEXTURE_2D, imageTex);
-        // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, image.width, image.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, image.buffer);
-
     },
     loadImage(url, callback) {
         let img = new Image();
