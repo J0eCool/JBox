@@ -16,6 +16,10 @@ import "gl" {
     func getProgramParameter(any, u32) -> u1;
     func getProgramInfoLog(any) -> string;
     func getAttribLocation(any, string) -> s32;
+    func getUniformLocation(any, string) -> any;
+
+    func uniform2f(any, f32, f32);
+    func uniformMatrix4fv(any, u1, f32buffer);
 
     // vbos
     func createBuffer() -> any;
@@ -77,29 +81,9 @@ enum GlConstant {
 };
 
 #include "common.h"
+#include "mat4.h"
 
 #include <string>
-
-const char* vertShader = R"(
-    attribute vec4 aPos;
-    attribute vec3 aColor;
-
-    varying vec3 vColor;
-
-    void main() {
-        gl_Position = aPos;
-        vColor = aColor;
-    }
-)";
-const char* fragShader = R"(
-    precision mediump float;
-
-    varying vec3 vColor;
-
-    void main() {
-        gl_FragColor = vec4(vColor, 1);
-    }
-)";
 
 void* loadShader(GlConstant ty, const char* text) {
     void* shader = createShader(ty);
@@ -113,74 +97,116 @@ void* loadShader(GlConstant ty, const char* text) {
     return shader;
 }
 
-void onKeyDown(int key) {
-}
-
-void onKeyUp(int key) {
-}
-
-struct GLState {
-    void* program;
-    int posLoc;
-    int colorLoc;
-    void* verts;
-    void* colors;
-} state;
-
-void init(int w, int h) {
-    registerOnKeyDown(onKeyDown);
-    registerOnKeyUp(onKeyUp);
-
+void* loadProgram(const char* vertText, const char* fragText) {
     void* program = createProgram();
-    attachShader(program, loadShader(gl_VERTEX_SHADER, vertShader));
-    attachShader(program, loadShader(gl_FRAGMENT_SHADER, fragShader));
+    attachShader(program, loadShader(gl_VERTEX_SHADER, vertText));
+    attachShader(program, loadShader(gl_FRAGMENT_SHADER, fragText));
     linkProgram(program);
     if (!getProgramParameter(program, gl_LINK_STATUS)) {
         auto msg = std::string("Program failed to link: ") + getProgramInfoLog(program);
         log(msg.c_str(), 0);
         program = nullptr;
     }
-    state.program = program;
-    state.posLoc = getAttribLocation(program, "aPos");
-    state.colorLoc = getAttribLocation(program, "aColor");
-
-    log("PosLoc: ", state.posLoc);
-    log("colorLoc: ", state.colorLoc);
-
-    float rawVertData[] = {
-        0.0, 0.0,
-        0.5, 0.7,
-        1.0, 0.0,
-    };
-    ITBuffer vertData(6*sizeof(float), rawVertData);
-    void* verts = createBuffer();
-    bindBuffer(gl_ARRAY_BUFFER, verts);
-    bufferData(gl_ARRAY_BUFFER, &vertData, gl_STATIC_DRAW);
-    state.verts = verts;
-
-    float rawColorData[] = {
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0,
-    };
-    ITBuffer colorData(9*sizeof(float), rawColorData);
-    void* colors = createBuffer();
-    bindBuffer(gl_ARRAY_BUFFER, colors);
-    bufferData(gl_ARRAY_BUFFER, &colorData, gl_STATIC_DRAW);
-    state.colors = colors;
+    return program;
 }
 
+class Program {
+    void* program;
+    int posLoc;
+    int colorLoc;
+    void* matrixLoc;
+    void* verts;
+    void* colors;
+public:
+    Program() {
+        const char* vertShader = R"(
+            attribute vec4 aPos;
+            attribute vec3 aColor;
+
+            uniform mat4 uMatrix;
+
+            varying vec3 vColor;
+
+            void main() {
+                gl_Position = uMatrix * aPos;
+                vColor = aColor;
+            }
+        )";
+        const char* fragShader = R"(
+            precision mediump float;
+
+            varying vec3 vColor;
+
+            void main() {
+                gl_FragColor = vec4(vColor, 1);
+            }
+        )";
+
+        program = loadProgram(vertShader, fragShader);
+        posLoc = getAttribLocation(program, "aPos");
+        colorLoc = getAttribLocation(program, "aColor");
+        matrixLoc = getUniformLocation(program, "uMatrix");
+
+        Buffer<float> vertData(18, (float[]){
+            -0.5, -0.5, 0.0,
+            0.5, -0.5, 0.0,
+            0.5, 0.5, 0.0,
+
+            0.5, 0.5, 0.0,
+            -0.5, 0.5, 0.0,
+            -0.5, -0.5, 0.0,
+        });
+        verts = createBuffer();
+        bindBuffer(gl_ARRAY_BUFFER, verts);
+        bufferData(gl_ARRAY_BUFFER, &vertData, gl_STATIC_DRAW);
+
+        Buffer<float> colorData(18, (float[]){
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+        });
+        colors = createBuffer();
+        bindBuffer(gl_ARRAY_BUFFER, colors);
+        bufferData(gl_ARRAY_BUFFER, &colorData, gl_STATIC_DRAW);
+    }
+
+    void frame(float x, float y) {
+        clearColor(0.1, 0, 0, 1);
+        clear(gl_COLOR_BUFFER_BIT);
+
+        useProgram(program);
+        enableVertexAttribArray(posLoc);
+        bindBuffer(gl_ARRAY_BUFFER, verts);
+        vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
+        enableVertexAttribArray(colorLoc);
+        bindBuffer(gl_ARRAY_BUFFER, colors);
+        vertexAttribPointer(colorLoc, 3, gl_FLOAT, false, 0, 0);
+
+        auto mat = Mat4::scale(0.5) * Mat4::translate(x, y, 0);
+        uniformMatrix4fv(matrixLoc, false, mat.toITBuffer());
+
+        drawArrays(gl_TRIANGLES, 0, 6);
+    }
+} program;
+
+void onKeyDown(int key) {
+}
+
+void onKeyUp(int key) {
+}
+
+void init(int w, int h) {
+    registerOnKeyDown(onKeyDown);
+    registerOnKeyUp(onKeyUp);
+}
+
+int t = 0;
 void frame() {
-    clearColor(0.1, 0, 0, 1);
-    clear(gl_COLOR_BUFFER_BIT);
-
-    useProgram(state.program);
-    enableVertexAttribArray(state.posLoc);
-    bindBuffer(gl_ARRAY_BUFFER, state.verts);
-    vertexAttribPointer(state.posLoc, 2, gl_FLOAT, false, 0, 0);
-    enableVertexAttribArray(state.colorLoc);
-    bindBuffer(gl_ARRAY_BUFFER, state.colors);
-    vertexAttribPointer(state.colorLoc, 3, gl_FLOAT, false, 0, 0);
-
-    drawArrays(gl_TRIANGLES, 0, 3);
+    float x = cos(t * TAU / 178);
+    float y = sin(t * TAU / 78);
+    program.frame(x, y);
+    t++;
 }

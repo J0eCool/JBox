@@ -161,6 +161,8 @@ let math = {
     rnd() {
         return Math.random();
     },
+    sin: Math.sin,
+    cos: Math.cos,
 };
 let objects = {
     create() {

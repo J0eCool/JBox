@@ -30,7 +30,8 @@ class PixelBuffer : public Buffer<int> {
 public:
     PixelBuffer(int w, int h) : Buffer<int>(w*h), _width(w), _height(h) {}
     PixelBuffer() : Buffer<int>(0), _width(0), _height(0) {}
-    PixelBuffer(ITBuffer* buffer, int w, int h) : Buffer<int>(buffer, w*h), _width(w), _height(h) {}
+    PixelBuffer(ITBuffer* buffer, int w, int h) : Buffer<int>(w*h, buffer->rawBuffer()),
+        _width(w), _height(h) {}
 
     int& ref(int x, int y) {
         return (*(Buffer<int>*)this)[x + y*_width];
