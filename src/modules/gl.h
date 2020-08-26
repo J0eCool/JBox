@@ -35,6 +35,9 @@ import gl {
     func vertexAttribPointer(s32, u32, u32, u1, u32, u32);
 
     func drawArrays(u32, u32, u32);
+
+    func cullFace(s32);
+    func enable(s32);
 }
 
 import input {
@@ -72,6 +75,12 @@ enum GlConstant {
     gl_INT = 0x1404,
     gl_UNSIGNED_INT = 0x1405,
     gl_FLOAT = 0x1406,
+
+    // culling
+    gl_CULL_FACE = 0x0B44,
+    gl_FRONT = 0x0404,
+    gl_BACK = 0x0405,
+    gl_FRONT_AND_BACK = 0x0408,
 };
 
 #include <string>

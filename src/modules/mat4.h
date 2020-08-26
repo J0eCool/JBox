@@ -61,6 +61,36 @@ public:
     static Mat4 scale(float s) {
         return Mat4::scale(s, s, s);
     }
+    static Mat4 rotateX(float angle) {
+        auto c = cos(angle);
+        auto s = sin(angle);
+        return Mat4((float[]){
+            1.0, 0.0, 0.0, 0.0,
+            0.0, c, s, 0.0,
+            0.0, -s, c, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        });
+    }
+    static Mat4 rotateY(float angle) {
+        auto c = cos(angle);
+        auto s = sin(angle);
+        return Mat4((float[]){
+            c, 0.0, -s, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            s, 0.0, c, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        });
+    }
+    static Mat4 rotateZ(float angle) {
+        auto c = cos(angle);
+        auto s = sin(angle);
+        return Mat4((float[]){
+            c, s, 0.0, 0.0,
+            -s, c, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        });
+    }
 
     ITBuffer* toITBuffer() {
         return &buffer;
