@@ -45,7 +45,7 @@ PixelBuffer* pixels;
 PixelBuffer* font;
 Point charSize;
 
-std::string text = "circles";
+std::string text = "game";
 bool isShiftHeld = false;
 bool isCtrlHeld = false;
 
@@ -167,10 +167,10 @@ void frame() {
     pixels->fill(black);
     drawText(Point(40, 40), "$>" + text + '|');
 
+    Image img(pixels, width, height);
+    updateImage(&img);
+
     if (module) {
         callFrame(module);
     }
-
-    Image img(pixels, width, height);
-    updateImage(&img);
 }

@@ -1,6 +1,6 @@
 // Initialize WebGL
 let canvas = document.getElementById('canvas');
-let gl = canvas.getContext('webgl');
+let gl = canvas.getContext('webgl2');
 
 // shaders
 function loadShader(type, source) {
@@ -181,13 +181,19 @@ let wasm = {
         // make a deepish (2-level) copy
         let ret = {};
         for (let k in loadedModules) {
-            ret[k] = Object.assign({}, loadedModules[k]);
+            if (loadedModules[k] === gl) {
+                // refuses to obj.assign
+                ret[k] = gl;
+            } else {
+                ret[k] = Object.assign({}, loadedModules[k]);
+            }
         }
         return ret;
     },
     loadModule(name, imports, callback) {
         let components = {
             'circles': circlesComponent,
+            'game': gameComponent,
             'life': lifeComponent,
             'terminal': terminalComponent,
         };
@@ -208,6 +214,7 @@ let wasm = {
 let loadedModules = {
     imageDrawing,
     input,
+    gl,
     math,
     objects,
     wasm,
@@ -215,7 +222,7 @@ let loadedModules = {
 
 async function main() {
     // Load modules
-    let mod = await wasm.loadModule('terminal', loadedModules, () => {});
+    let mod = await wasm.loadModule('game', loadedModules, () => {});
 
     mod.init(resolution.width, resolution.height);
 
