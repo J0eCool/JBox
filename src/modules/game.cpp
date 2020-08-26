@@ -2,7 +2,7 @@
 
 include "gl.h"
 
-import "input" {
+import input {
     func log(string, s32);
     func registerOnKeyDown(func(s32));
     func registerOnKeyUp(func(s32));
@@ -52,9 +52,9 @@ public:
         )";
 
         program = loadProgram(vertShader, fragShader);
-        posLoc = getAttribLocation(program, "aPos");
-        colorLoc = getAttribLocation(program, "aColor");
-        matrixLoc = getUniformLocation(program, "uMatrix");
+        posLoc = gl::getAttribLocation(program, "aPos");
+        colorLoc = gl::getAttribLocation(program, "aColor");
+        matrixLoc = gl::getUniformLocation(program, "uMatrix");
 
         Buffer<float> vertData(18, (float[]){
             -0.5, -0.5, 0.0,
@@ -65,9 +65,9 @@ public:
             -0.5, 0.5, 0.0,
             -0.5, -0.5, 0.0,
         });
-        verts = createBuffer();
-        bindBuffer(gl_ARRAY_BUFFER, verts);
-        bufferData(gl_ARRAY_BUFFER, &vertData, gl_STATIC_DRAW);
+        verts = gl::createBuffer();
+        gl::bindBuffer(gl_ARRAY_BUFFER, verts);
+        gl::bufferData(gl_ARRAY_BUFFER, &vertData, gl_STATIC_DRAW);
 
         Buffer<float> colorData(18, (float[]){
             1.0, 0.0, 0.0,
@@ -77,27 +77,27 @@ public:
             0.0, 1.0, 0.0,
             0.0, 0.0, 1.0,
         });
-        colors = createBuffer();
-        bindBuffer(gl_ARRAY_BUFFER, colors);
-        bufferData(gl_ARRAY_BUFFER, &colorData, gl_STATIC_DRAW);
+        colors = gl::createBuffer();
+        gl::bindBuffer(gl_ARRAY_BUFFER, colors);
+        gl::bufferData(gl_ARRAY_BUFFER, &colorData, gl_STATIC_DRAW);
     }
 
     void frame(float x, float y) {
-        clearColor(0.1, 0, 0, 1);
-        clear(gl_COLOR_BUFFER_BIT);
+        gl::clearColor(0.1, 0, 0, 1);
+        gl::clear(gl_COLOR_BUFFER_BIT);
 
-        useProgram(program);
-        enableVertexAttribArray(posLoc);
-        bindBuffer(gl_ARRAY_BUFFER, verts);
-        vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
-        enableVertexAttribArray(colorLoc);
-        bindBuffer(gl_ARRAY_BUFFER, colors);
-        vertexAttribPointer(colorLoc, 3, gl_FLOAT, false, 0, 0);
+        gl::useProgram(program);
+        gl::enableVertexAttribArray(posLoc);
+        gl::bindBuffer(gl_ARRAY_BUFFER, verts);
+        gl::vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
+        gl::enableVertexAttribArray(colorLoc);
+        gl::bindBuffer(gl_ARRAY_BUFFER, colors);
+        gl::vertexAttribPointer(colorLoc, 3, gl_FLOAT, false, 0, 0);
 
         auto mat = Mat4::scale(0.5) * Mat4::translate(x, y, 0);
-        uniformMatrix4fv(matrixLoc, false, mat.toITBuffer());
+        gl::uniformMatrix4fv(matrixLoc, false, mat.toITBuffer());
 
-        drawArrays(gl_TRIANGLES, 0, 6);
+        gl::drawArrays(gl_TRIANGLES, 0, 6);
     }
 } program;
 
@@ -108,8 +108,8 @@ void onKeyUp(int key) {
 }
 
 void init(int w, int h) {
-    registerOnKeyDown(onKeyDown);
-    registerOnKeyUp(onKeyUp);
+    input::registerOnKeyDown(onKeyDown);
+    input::registerOnKeyUp(onKeyUp);
 }
 
 int t = 0;

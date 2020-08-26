@@ -1,6 +1,6 @@
 /**IT_START**/
 
-import "gl" {
+import gl {
     // shaders
     func createShader(u32) -> any;
     func shaderSource(any, string);
@@ -37,7 +37,7 @@ import "gl" {
     func drawArrays(u32, u32, u32);
 }
 
-import "input" {
+import input {
     func log(string, s32);
 }
 
@@ -77,25 +77,25 @@ enum GlConstant {
 #include <string>
 
 void* loadShader(GlConstant ty, const char* text) {
-    void* shader = createShader(ty);
-    shaderSource(shader, text);
-    compileShader(shader);
-    if (!getShaderParameter(shader, gl_COMPILE_STATUS)) {
-        auto msg = std::string("Shader failed to compile: ") + getShaderInfoLog(shader);
-        log(msg.c_str(), 0);
+    void* shader = gl::createShader(ty);
+    gl::shaderSource(shader, text);
+    gl::compileShader(shader);
+    if (!gl::getShaderParameter(shader, gl_COMPILE_STATUS)) {
+        auto msg = std::string("Shader failed to compile: ") + gl::getShaderInfoLog(shader);
+        input::log(msg.c_str(), 0);
         shader = nullptr;
     }
     return shader;
 }
 
 void* loadProgram(const char* vertText, const char* fragText) {
-    void* program = createProgram();
-    attachShader(program, loadShader(gl_VERTEX_SHADER, vertText));
-    attachShader(program, loadShader(gl_FRAGMENT_SHADER, fragText));
-    linkProgram(program);
-    if (!getProgramParameter(program, gl_LINK_STATUS)) {
-        auto msg = std::string("Program failed to link: ") + getProgramInfoLog(program);
-        log(msg.c_str(), 0);
+    void* program = gl::createProgram();
+    gl::attachShader(program, loadShader(gl_VERTEX_SHADER, vertText));
+    gl::attachShader(program, loadShader(gl_FRAGMENT_SHADER, fragText));
+    gl::linkProgram(program);
+    if (!gl::getProgramParameter(program, gl_LINK_STATUS)) {
+        auto msg = std::string("Program failed to link: ") + gl::getProgramInfoLog(program);
+        input::log(msg.c_str(), 0);
         program = nullptr;
     }
     return program;

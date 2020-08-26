@@ -6,7 +6,7 @@ type Image = struct {
     height: s32;
 }
 
-import "imageDrawing" {
+import imageDrawing {
     func updateImage(Image);
 }
 export {
@@ -53,6 +53,6 @@ void frame() {
     }
 
     Image img(&pixels, width, height);
-    updateImage(&img);
+    imageDrawing::updateImage(&img);
     t += 1000;
 }

@@ -6,22 +6,22 @@ type Image = struct {
     height: s32;
 }
 
-import "imageDrawing" {
+import imageDrawing {
     func updateImage(Image);
     func loadImage(string, func(Image));
 }
-import "input" {
+import input {
     func log(string, s32);
     func registerOnKeyDown(func(s32));
     func registerOnKeyUp(func(s32));
 }
-import "objects" {
+import objects {
     func copy(any) -> any;
     func getField(any, string) -> any;
     // TODO: overloading support
     func setField(any, string, func(Image));
 }
-import "wasm" {
+import wasm {
     func getLoadedModules() -> any;
     func loadModule(string, any, func(any));
     func callInit(any, s32, s32);
@@ -55,7 +55,7 @@ int subHeight = 240;
 void* module = nullptr;
 void onModuleLoad(void* mod) {
     module = mod;
-    callInit(module, subWidth, subHeight);
+    wasm::callInit(module, subWidth, subHeight);
 }
 
 void onFontLoad(Image* image) {
@@ -74,10 +74,10 @@ void updateSubImage(Image* image) {
 }
 
 void executeCommand() {
-    void* imports = getLoadedModules();
-    void* graphics = getField(imports, "imageDrawing");
-    setField(graphics, "updateImage", updateSubImage);
-    loadModule(text.c_str(), imports, onModuleLoad);
+    void* imports = wasm::getLoadedModules();
+    void* graphics = objects::getField(imports, "imageDrawing");
+    objects::setField(graphics, "updateImage", updateSubImage);
+    wasm::loadModule(text.c_str(), imports, onModuleLoad);
     text.clear();
 }
 
@@ -116,7 +116,7 @@ void onKeyDown(int key) {
             }
             break;
         default:
-            log("Unknown key down:", key);
+            input::log("Unknown key down:", key);
             break;
         }
     }
@@ -134,15 +134,15 @@ void onKeyUp(int key) {
 }
 
 void init(int w, int h) {
-    registerOnKeyDown(onKeyDown);
-    registerOnKeyUp(onKeyUp);
+    input::registerOnKeyDown(onKeyDown);
+    input::registerOnKeyUp(onKeyUp);
 
     width = w;
     height = h;
 
     pixels = new PixelBuffer(w, h);
 
-    loadImage("textures/font.png", onFontLoad);
+    imageDrawing::loadImage("textures/font.png", onFontLoad);
 }
 
 void drawChar(Point pos, char c) {
@@ -168,9 +168,9 @@ void frame() {
     drawText(Point(40, 40), "$>" + text + '|');
 
     Image img(pixels, width, height);
-    updateImage(&img);
+    imageDrawing::updateImage(&img);
 
     if (module) {
-        callFrame(module);
+        wasm::callFrame(module);
     }
 }

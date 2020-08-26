@@ -6,10 +6,10 @@ type Image = struct {
     height: s32;
 }
 
-import "imageDrawing" {
+import imageDrawing {
     func updateImage(Image);
 }
-import "math" {
+import math {
     func rnd() -> f32;
 }
 export {
@@ -41,9 +41,9 @@ void init(int w, int h) {
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             curr->ref(x, y) = black;
-                // ((rnd() < 0.35) ? red : black) |
-                // ((rnd() < 0.35) ? green : black) |
-                // ((rnd() < 0.35) ? blue : black);
+                // ((math::rnd() < 0.35) ? red : black) |
+                // ((math::rnd() < 0.35) ? green : black) |
+                // ((math::rnd() < 0.35) ? blue : black);
         }
     }
 }
@@ -76,7 +76,7 @@ int countNeighbors(int x, int y, int mask) {
 
     // check adjacent colors at the same x,y position
     auto m2 = (mask << 8) | ((mask & 0x00ff0000) >> 16);
-    if (rnd() < 0.4 && isAlive(x, y, m2)) {
+    if (math::rnd() < 0.4 && isAlive(x, y, m2)) {
         nAlive++;
     }
 
@@ -102,7 +102,7 @@ void frame() {
             int j = int(y + height * (1.5 + sin(s) / 3)) % height;
             for (int x = 0; x < 30; ++x) {
                 int i = int(x + width * (1.5 + cos(s) / 3)) % width;
-                if (rnd() < 0.07) {
+                if (math::rnd() < 0.07) {
                     back->ref(i, j) |= color;
                 }
             }
@@ -133,5 +133,5 @@ void frame() {
     }
 
     Image img(curr, width, height);
-    updateImage(&img);
+    imageDrawing::updateImage(&img);
 }
