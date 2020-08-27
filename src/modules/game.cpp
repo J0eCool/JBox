@@ -28,6 +28,8 @@ class Program {
     void* verts;
     void* colors;
 public:
+    float dist = 3.0;
+    float rot = 0.0;
     Program() {
         const char* vertShader = R"(
             attribute vec4 aPos;
@@ -81,24 +83,27 @@ public:
         gl::bufferData(gl_ARRAY_BUFFER, &colorData, gl_STATIC_DRAW);
     }
 
-    void frame(int t) {
+    void frame() {
         gl::enable(gl_DEPTH_TEST);
         gl::enable(gl_CULL_FACE);
         gl::clearColor(0.1, 0, 0, 1);
         gl::clear(gl_COLOR_BUFFER_BIT | gl_DEPTH_BUFFER_BIT);
 
         gl::useProgram(program);
+
+        auto mat = Mat4()
+            * Mat4::perspective(90, 1.333, 0.1, 100.0)
+            * Mat4::translate(0, 0, -dist)
+            * Mat4::rotateY(rot)
+            ;
+        gl::uniformMatrix4fv(matrixLoc, false, &mat);
+
         gl::enableVertexAttribArray(posLoc);
         gl::bindBuffer(gl_ARRAY_BUFFER, verts);
         gl::vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
         gl::enableVertexAttribArray(colorLoc);
         gl::bindBuffer(gl_ARRAY_BUFFER, colors);
         gl::vertexAttribPointer(colorLoc, 3, gl_FLOAT, false, 0, 0);
-
-        auto mat = Mat4::orthographic(-1.33, 1.33, -1.0, 1.0, -1.0, 1.0)
-            * Mat4::rotateY(t * TAU * 0.01) * Mat4::rotateX(PI / 6) * Mat4::rotateZ(PI/8);
-        gl::uniformMatrix4fv(matrixLoc, false, &mat);
-
         gl::drawArrays(gl_TRIANGLES, 0, 36);
     }
 
@@ -127,10 +132,13 @@ public:
     }
 } program;
 
+bool isHeld[256];
 void onKeyDown(int key) {
+    isHeld[key] = true;
 }
 
 void onKeyUp(int key) {
+    isHeld[key] = false;
 }
 
 void init(int w, int h) {
@@ -138,8 +146,11 @@ void init(int w, int h) {
     input::registerOnKeyUp(onKeyUp);
 }
 
-int t = 0;
 void frame() {
-    program.frame(t);
-    t++;
+    int dx = isHeld[(int)'d'] - isHeld[(int)'a'];
+    int dy = isHeld[(int)'s'] - isHeld[(int)'w'];
+    program.rot += dx * TAU * 0.7 / 60;
+    program.dist += dy * 2.5 / 60;
+    if (program.dist < 1.25) { program.dist = 1.25; }
+    program.frame();
 }

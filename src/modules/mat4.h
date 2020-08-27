@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string.h>
-
 class Mat4 : public FixedBuffer<float, 16> {
 public:
     // default: identity matrix
@@ -96,5 +94,14 @@ public:
             (left+right) / (left-right), (bottom+top) / (bottom-top), (near+far) / (near-far), 1.0,
         });
     }
-
+    static Mat4 perspective(float fov, float aspect, float near, float far) {
+        float f = tan(PI/2 - fov/2);
+        float invRange = 1.0 / (near - far);
+        return Mat4((float[]){
+            f / aspect, 0.0, 0.0, 0.0,
+            0.0, f, 0.0, 0.0,
+            0.0, 0.0, (near+far) * invRange, -1.0,
+            0.0, 0.0, near * far * invRange * 2.0f, 0.0,
+        });
+    }
 };
