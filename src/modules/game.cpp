@@ -62,43 +62,19 @@ public:
         auto cube = cubeModel();
         gl::bufferData(gl_ARRAY_BUFFER, &cube, gl_STATIC_DRAW);
 
-        Buffer<float> colorData(112, (float[112]){
-            1.0, 0.0, 0.0,
-            1.0, 0.0, 0.0,
-            1.0, 0.0, 0.0,
-            1.0, 0.0, 0.0,
-            1.0, 0.0, 0.0,
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0,
-            0.0, 0.0, 1.0,
-            0.0, 0.0, 1.0,
-            0.0, 0.0, 1.0,
-            0.0, 0.0, 1.0,
-            0.0, 0.0, 1.0,
-            1.0, 1.0, 0.0,
-            1.0, 1.0, 0.0,
-            1.0, 1.0, 0.0,
-            1.0, 1.0, 0.0,
-            1.0, 1.0, 0.0,
-            1.0, 1.0, 0.0,
-            0.0, 1.0, 1.0,
-            0.0, 1.0, 1.0,
-            0.0, 1.0, 1.0,
-            0.0, 1.0, 1.0,
-            0.0, 1.0, 1.0,
-            0.0, 1.0, 1.0,
-            1.0, 0.0, 1.0,
-            1.0, 0.0, 1.0,
-            1.0, 0.0, 1.0,
-            1.0, 0.0, 1.0,
-            1.0, 0.0, 1.0,
-            1.0, 0.0, 1.0,
+        Vec3 red(1.0, 0.0, 0.0);
+        Vec3 green(0.0, 1.0, 0.0);
+        Vec3 blue(0.0, 0.0, 1.0);
+        Vec3 yellow(1.0, 1.0, 0.0);
+        Vec3 cyan(0.0, 1.0, 1.0);
+        Vec3 magenta(1.0, 0.0, 1.0);
+        Buffer<Vec3> colorData(36, (Vec3[36]){
+            red, red, red, red, red, red,
+            green, green, green, green, green, green,
+            blue, blue, blue, blue, blue, blue,
+            yellow, yellow, yellow, yellow, yellow, yellow,
+            cyan, cyan, cyan, cyan, cyan, cyan,
+            magenta, magenta, magenta, magenta, magenta, magenta,
         });
         colors = gl::createBuffer();
         gl::bindBuffer(gl_ARRAY_BUFFER, colors);
@@ -106,9 +82,10 @@ public:
     }
 
     void frame(int t) {
-        gl::clearColor(0.1, 0, 0, 1);
-        gl::clear(gl_COLOR_BUFFER_BIT);
+        gl::enable(gl_DEPTH_TEST);
         gl::enable(gl_CULL_FACE);
+        gl::clearColor(0.1, 0, 0, 1);
+        gl::clear(gl_COLOR_BUFFER_BIT | gl_DEPTH_BUFFER_BIT);
 
         gl::useProgram(program);
         gl::enableVertexAttribArray(posLoc);
@@ -118,8 +95,9 @@ public:
         gl::bindBuffer(gl_ARRAY_BUFFER, colors);
         gl::vertexAttribPointer(colorLoc, 3, gl_FLOAT, false, 0, 0);
 
-        auto mat = Mat4::rotateY(t * TAU * 0.01) * Mat4::rotateX(PI / 6) * Mat4::rotateZ(PI/8);
-        gl::uniformMatrix4fv(matrixLoc, false, mat.toITBuffer());
+        auto mat = Mat4::orthographic(-1.33, 1.33, -1.0, 1.0, -1.0, 1.0)
+            * Mat4::rotateY(t * TAU * 0.01) * Mat4::rotateX(PI / 6) * Mat4::rotateZ(PI/8);
+        gl::uniformMatrix4fv(matrixLoc, false, &mat);
 
         gl::drawArrays(gl_TRIANGLES, 0, 36);
     }
@@ -137,8 +115,8 @@ public:
         Vec3 H(+h, -h, +h);
 
         // 3 verts per tri, 2 tris per face, 6 faces
-        const int nVerts = 3 * 2 * 6;
-        return Buffer<Vec3>(nVerts, (Vec3[nVerts]){
+        const int nTris = 3 * 2 * 6;
+        return Buffer<Vec3>(nTris, (Vec3[nTris]){
             A, B, C, C, D, A, // bottom
             A, E, F, F, B, A, // left
             A, D, H, H, E, A, // front

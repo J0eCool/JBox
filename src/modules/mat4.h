@@ -2,21 +2,17 @@
 
 #include <string.h>
 
-class Mat4 {
-    float data[16];
-    Buffer<float> buffer;
+class Mat4 : public FixedBuffer<float, 16> {
 public:
     // default: identity matrix
-    Mat4() : data {
+    Mat4() : FixedBuffer<float, 16>((float[16]){
         1.0, 0.0, 0.0, 0.0,
         0.0, 1.0, 0.0, 0.0,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
-    }, buffer(16, data) {}
+    }) {}
 
-    Mat4(float const _data[16]) : buffer(16, data) {
-        memcpy(data, _data, 16*sizeof(float));
-    }
+    Mat4(float const _data[16]) : FixedBuffer<float, 16>(_data) {}
 
     static Mat4 identity() {
         return Mat4();
@@ -25,7 +21,7 @@ public:
     Mat4 operator*(float scale) const {
         auto ret = Mat4();
         for (int i = 0; i < 16; ++i) {
-            ret.data[i] = data[i] * scale;
+            ret[i] = (*this)[i] * scale;
         }
         return ret;
     }
@@ -34,9 +30,9 @@ public:
         for (int i = 0; i < 16; ++i) {
             int x = i % 4;
             int y = i / 4;
-            ret.data[i] = 0.0;
+            ret[i] = 0.0;
             for (int j = 0; j < 4; ++j) {
-                ret.data[i] += data[x + j * 4] * other.data[j + y * 4];
+                ret[i] += (*this)[x + j * 4] * other[j + y * 4];
             }
         }
         return ret;
@@ -92,7 +88,13 @@ public:
         });
     }
 
-    ITBuffer* toITBuffer() {
-        return &buffer;
+    static Mat4 orthographic(float left, float right, float bottom, float top, float near, float far) {
+        return Mat4((float[]){
+            2.0f / (right-left), 0.0, 0.0, 0.0,
+            0.0, 2.0f / (top-bottom), 0.0, 0.0,
+            0.0, 0.0, 2.0f / (near-far), 0.0,
+            (left+right) / (left-right), (bottom+top) / (bottom-top), (near+far) / (near-far), 1.0,
+        });
     }
+
 };

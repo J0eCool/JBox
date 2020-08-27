@@ -6,6 +6,7 @@ out/life.wasm \
 out/terminal.wasm \
 
 OPT=-O1
+WABT_FLAGS=--enable-simd
 
 build: out $(FILES)
 
@@ -28,9 +29,9 @@ out/%.wasm out/%.itl: src/modules/%.cpp
 	emcc out/$*.cpp -o out/$*.wasm $(OPT) \
 		-s ERROR_ON_UNDEFINED_SYMBOLS=0 -s TOTAL_MEMORY=256MB \
 		-s ALLOW_TABLE_GROWTH=1 -Wl,--export-table \
-		-Iout -Isrc/modules -std=c++11 --no-entry --profiling-funcs
-	wasm2wat out/$*.wasm -o out/$*.wat
-	wasm-decompile out/$*.wasm -o out/$*.wade
+		-Iout -Isrc/modules -std=c++11 --no-entry --profiling-funcs -Wall
+	wasm2wat $(WABT_FLAGS) out/$*.wasm -o out/$*.wat
+	wasm-decompile $(WABT_FLAGS) out/$*.wasm -o out/$*.wade
 
 out/%.html: out src/%.html
 	cp src/$*.html out/$*.html
