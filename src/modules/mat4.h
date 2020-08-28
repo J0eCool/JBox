@@ -1,5 +1,7 @@
 #pragma once
 
+#include "vec3.h"
+
 class Mat4 : public FixedBuffer<float, 16> {
 public:
     // default: identity matrix
@@ -43,6 +45,9 @@ public:
             0.0, 0.0, 1.0, 0.0,
             x, y, z, 1.0,
         });
+    }
+    static Mat4 translate(Vec3 d) {
+        return translate(d.x, d.y, d.z);
     }
     static Mat4 scale(float x, float y, float z = 1.0) {
         return Mat4((float[]){

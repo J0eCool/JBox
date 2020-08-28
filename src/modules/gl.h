@@ -25,6 +25,7 @@ import gl {
     func createBuffer() -> any;
     func bindBuffer(u32, any);
     func bufferData(u32, buffer, u32);
+    func bufferSubData(u32, u32, buffer);
 
     // textures
     func createTexture() -> any;
@@ -199,10 +200,10 @@ void* loadProgram(const char* vertText, const char* fragText) {
 }
 
 template <typename T>
-void* createVbo(Buffer<T> buffer) {
+void* createVbo(Buffer<T> buffer, GlConstant bufferType = gl_STATIC_DRAW) {
     void* vbo = gl::createBuffer();
     gl::bindBuffer(gl_ARRAY_BUFFER, vbo);
-    gl::bufferData(gl_ARRAY_BUFFER, &buffer, gl_STATIC_DRAW);
+    gl::bufferData(gl_ARRAY_BUFFER, &buffer, bufferType);
     return vbo;
 }
 

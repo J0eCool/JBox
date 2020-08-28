@@ -109,6 +109,10 @@ public:
         gl::bindBuffer(gl_ARRAY_BUFFER, colors);
         gl::vertexAttribPointer(colorLoc, 3, gl_FLOAT, false, 0, 0);
         gl::drawArrays(gl_TRIANGLES, 0, 36);
+
+        mat = mat * Mat4::translate(1.1, 0);
+        gl::uniformMatrix4fv(matrixLoc, false, &mat);
+        gl::drawArrays(gl_TRIANGLES, 0, 36);
     }
 } world;
 
@@ -120,6 +124,7 @@ class UiScene {
     void* verts;
     void* texUvs;
     static void* texId;
+    Mat4 projection;
 public:
     float dist = 3.0;
     float rot = 0.0;
@@ -176,6 +181,8 @@ public:
 
         texId = gl::createTexture();
         imageDrawing::loadImage("textures/font.png", UiScene::onFontLoad);
+
+        projection = Mat4::uiOrtho(800, 600);
     }
 
     static void onFontLoad(Image* image) {
@@ -196,19 +203,43 @@ public:
 
         gl::useProgram(program);
 
-        auto mat = Mat4()
-            * Mat4::uiOrtho(800, 600)
-            * Mat4::translate(50, 50)
-            * Mat4::scale(700, 900)
-            ;
-        gl::uniformMatrix4fv(matrixLoc, false, &mat);
+        char strBuff[128];
+        snprintf(strBuff, sizeof(strBuff), "dist = %f", world.dist);
+        drawText(Vec3(50, 50), strBuff);
+        snprintf(strBuff, sizeof(strBuff), "rot  = %f", world.rot);
+        drawText(Vec3(50, 80), strBuff);
+    }
 
+    void drawText(Vec3 pos, std::string str) {
+        gl::bindTexture(gl_TEXTURE_2D, texId);
         gl::bindBuffer(gl_ARRAY_BUFFER, verts);
         gl::vertexAttribPointer(posLoc, 2, gl_FLOAT, false, 0, 0);
-        gl::bindBuffer(gl_ARRAY_BUFFER, texUvs);
-        gl::vertexAttribPointer(texUvLoc, 2, gl_FLOAT, false, 0, 0);
-        gl::bindTexture(gl_TEXTURE_2D, texId);
-        gl::drawArrays(gl_TRIANGLES, 0, 12);
+        float w = 1.0 / 16.0;
+        for (int i = 0; i < str.size(); ++i) {
+            char c = str[i];
+            float x = (c % 16) * w;
+            float y = (c / 16) * w;
+            float u0 = x;
+            float u1 = u0 + w;
+            float v0 = y;
+            float v1 = v0 + w;
+            auto uvs = Buffer<float>(12, (float[12]){
+                u0, v0,
+                u0, v1,
+                u1, v0,
+                u1, v0,
+                u0, v1,
+                u1, v1,
+            });
+            gl::bindBuffer(gl_ARRAY_BUFFER, texUvs);
+            gl::bufferSubData(gl_ARRAY_BUFFER, 0, &uvs);
+            gl::vertexAttribPointer(texUvLoc, 2, gl_FLOAT, false, 0, 0);
+
+            auto cur = pos + Vec3(18*i, 0);
+            auto matrix = projection * Mat4::translate(cur) * Mat4::scale(18, 24);
+            gl::uniformMatrix4fv(matrixLoc, false, &matrix);
+            gl::drawArrays(gl_TRIANGLES, 0, 12);
+        }
     }
 } gui;
 
