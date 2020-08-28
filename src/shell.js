@@ -178,6 +178,11 @@ let objects = {
         obj[field] = val;
     },
 };
+let time = {
+    now() {
+        return performance.now() / 1000;
+    },
+};
 let wasm = {
     getLoadedModules() {
         // make a deepish (2-level) copy
@@ -219,6 +224,7 @@ let loadedModules = {
     gl,
     math,
     objects,
+    time,
     wasm,
 };
 

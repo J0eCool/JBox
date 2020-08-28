@@ -16,6 +16,9 @@ import input {
 import imageDrawing {
     func loadImage(string, func(Image));
 }
+import time {
+    func now() -> f32;
+}
 export {
     func init(s32, s32);
     func frame();
@@ -167,6 +170,7 @@ public:
             0.0, 1.0,
             1.0, 1.0,
         }));
+        // texUvs get overridden, but we need to initialize them in the first place
         texUvs = createVbo(Buffer<float>(12, (float[12]){
             0.0, 0.0,
             0.0, 1.0,
@@ -252,16 +256,21 @@ void onKeyUp(int key) {
     isHeld[(unsigned char)key] = false;
 }
 
+float lastFrame;
 void init(int w, int h) {
     input::registerOnKeyDown(onKeyDown);
     input::registerOnKeyUp(onKeyUp);
+    lastFrame = time::now();
 }
 
 void frame() {
+    auto t = time::now();
+    auto dt = t - lastFrame;
+    lastFrame = t;
     int dx = isHeld[(int)'d'] - isHeld[(int)'a'];
     int dy = isHeld[(int)'s'] - isHeld[(int)'w'];
-    world.rot += dx * TAU * 0.7 / 60;
-    world.dist += dy * 2.5 / 60;
+    world.rot += dx * TAU * 0.3 * dt;
+    world.dist += dy * 2.5 * dt;
     if (world.dist < 1.25) { world.dist = 1.25; }
 
     world.draw();
