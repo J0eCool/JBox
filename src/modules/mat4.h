@@ -36,7 +36,7 @@ public:
         return ret;
     }
 
-    static Mat4 translate(float x, float y, float z) {
+    static Mat4 translate(float x, float y, float z = 0.0) {
         return Mat4((float[]){
             1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0, 0.0,
@@ -44,7 +44,7 @@ public:
             x, y, z, 1.0,
         });
     }
-    static Mat4 scale(float x, float y, float z) {
+    static Mat4 scale(float x, float y, float z = 1.0) {
         return Mat4((float[]){
             x, 0.0, 0.0, 0.0,
             0.0, y, 0.0, 0.0,
@@ -93,6 +93,10 @@ public:
             0.0, 0.0, 2.0f / (near-far), 0.0,
             (left+right) / (left-right), (bottom+top) / (bottom-top), (near+far) / (near-far), 1.0,
         });
+    }
+    static Mat4 uiOrtho(float width, float height, float depth = 100.0) {
+        // Ortho, but with 0,0 as the top-left rather than bottom-left
+        return orthographic(0, width, height, 0, 0, depth);
     }
     static Mat4 perspective(float fov, float aspect, float near, float far) {
         float f = tan(PI/2 - fov/2);

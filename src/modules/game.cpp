@@ -2,10 +2,19 @@
 
 include "gl.h"
 
+type Image = struct {
+    pixels: buffer;
+    width: s32;
+    height: s32;
+}
+
 import input {
     func log(string, s32);
     func registerOnKeyDown(func(s32));
     func registerOnKeyUp(func(s32));
+}
+import imageDrawing {
+    func loadImage(string, func(Image));
 }
 export {
     func init(s32, s32);
@@ -20,7 +29,7 @@ export {
 
 #include <string>
 
-class Program {
+class WorldScene {
     void* program;
     int posLoc;
     int colorLoc;
@@ -30,7 +39,7 @@ class Program {
 public:
     float dist = 3.0;
     float rot = 0.0;
-    Program() {
+    WorldScene() {
         const char* vertShader = R"(
             attribute vec4 aPos;
             attribute vec3 aColor;
@@ -59,10 +68,7 @@ public:
         colorLoc = gl::getAttribLocation(program, "aColor");
         matrixLoc = gl::getUniformLocation(program, "uMatrix");
 
-        verts = gl::createBuffer();
-        gl::bindBuffer(gl_ARRAY_BUFFER, verts);
-        auto cube = cubeModel();
-        gl::bufferData(gl_ARRAY_BUFFER, &cube, gl_STATIC_DRAW);
+        verts = createVbo(cubeModel());
 
         Vec3 red(1.0, 0.0, 0.0);
         Vec3 green(0.0, 1.0, 0.0);
@@ -70,20 +76,20 @@ public:
         Vec3 yellow(1.0, 1.0, 0.0);
         Vec3 cyan(0.0, 1.0, 1.0);
         Vec3 magenta(1.0, 0.0, 1.0);
-        Buffer<Vec3> colorData(36, (Vec3[36]){
+        colors = createVbo(Buffer<Vec3> (36, (Vec3[36]){
             red, red, red, red, red, red,
             green, green, green, green, green, green,
             blue, blue, blue, blue, blue, blue,
             yellow, yellow, yellow, yellow, yellow, yellow,
             cyan, cyan, cyan, cyan, cyan, cyan,
             magenta, magenta, magenta, magenta, magenta, magenta,
-        });
-        colors = gl::createBuffer();
-        gl::bindBuffer(gl_ARRAY_BUFFER, colors);
-        gl::bufferData(gl_ARRAY_BUFFER, &colorData, gl_STATIC_DRAW);
+        }));
+
+        gl::enableVertexAttribArray(posLoc);
+        gl::enableVertexAttribArray(colorLoc);
     }
 
-    void frame() {
+    void draw() {
         gl::enable(gl_DEPTH_TEST);
         gl::enable(gl_CULL_FACE);
         gl::clearColor(0.1, 0, 0, 1);
@@ -98,47 +104,121 @@ public:
             ;
         gl::uniformMatrix4fv(matrixLoc, false, &mat);
 
-        gl::enableVertexAttribArray(posLoc);
         gl::bindBuffer(gl_ARRAY_BUFFER, verts);
         gl::vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
-        gl::enableVertexAttribArray(colorLoc);
         gl::bindBuffer(gl_ARRAY_BUFFER, colors);
         gl::vertexAttribPointer(colorLoc, 3, gl_FLOAT, false, 0, 0);
         gl::drawArrays(gl_TRIANGLES, 0, 36);
     }
+} world;
 
-    Buffer<Vec3> cubeModel() {
-        float h = 0.5; // cube size; using 0.5 for centered unit cube
-        // ABCD on bottom, EFGH on top
-        Vec3 A(-h, -h, -h);
-        Vec3 B(-h, +h, -h);
-        Vec3 C(+h, +h, -h);
-        Vec3 D(+h, -h, -h);
-        Vec3 E(-h, -h, +h);
-        Vec3 F(-h, +h, +h);
-        Vec3 G(+h, +h, +h);
-        Vec3 H(+h, -h, +h);
+class UiScene {
+    void* program;
+    int posLoc;
+    int texUvLoc;
+    void* matrixLoc;
+    void* verts;
+    void* texUvs;
+    static void* texId;
+public:
+    float dist = 3.0;
+    float rot = 0.0;
+    UiScene() {
+        const char* vertShader = R"(
+            attribute vec4 aPos;
+            attribute vec2 aTexUv;
 
-        // 3 verts per tri, 2 tris per face, 6 faces
-        const int nTris = 3 * 2 * 6;
-        return Buffer<Vec3>(nTris, (Vec3[nTris]){
-            A, B, C, C, D, A, // bottom
-            A, E, F, F, B, A, // left
-            A, D, H, H, E, A, // front
-            D, C, G, G, H, D, // right
-            B, F, G, G, C, B, // back
-            E, H, G, G, F, E, // top
-        });
+            uniform mat4 uMatrix;
+
+            varying vec2 vTexUv;
+
+            void main() {
+                gl_Position = uMatrix * aPos;
+                vTexUv = aTexUv;
+            }
+        )";
+        const char* fragShader = R"(
+            precision mediump float;
+
+            uniform sampler2D uImage;
+
+            varying vec2 vTexUv;
+
+            void main() {
+                gl_FragColor = texture2D(uImage, vTexUv);
+            }
+        )";
+
+        program = loadProgram(vertShader, fragShader);
+        posLoc = gl::getAttribLocation(program, "aPos");
+        texUvLoc = gl::getAttribLocation(program, "aTexUv");
+        matrixLoc = gl::getUniformLocation(program, "uMatrix");
+
+        verts = createVbo(Buffer<float>(12, (float[12]){
+            0.0, 0.0,
+            0.0, 1.0,
+            1.0, 0.0,
+            1.0, 0.0,
+            0.0, 1.0,
+            1.0, 1.0,
+        }));
+        texUvs = createVbo(Buffer<float>(12, (float[12]){
+            0.0, 0.0,
+            0.0, 1.0,
+            1.0, 0.0,
+            1.0, 0.0,
+            0.0, 1.0,
+            1.0, 1.0,
+        }));
+
+        gl::enableVertexAttribArray(posLoc);
+        gl::enableVertexAttribArray(texUvLoc);
+
+        texId = gl::createTexture();
+        imageDrawing::loadImage("textures/font.png", UiScene::onFontLoad);
     }
-} program;
+
+    static void onFontLoad(Image* image) {
+        gl::bindTexture(gl_TEXTURE_2D, texId);
+        gl::texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_CLAMP_TO_EDGE);
+        gl::texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_T, gl_CLAMP_TO_EDGE);
+        gl::texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_NEAREST);
+        gl::texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MAG_FILTER, gl_NEAREST);
+        gl::texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, image->width, image->height, 0,
+            gl_RGBA, gl_UNSIGNED_BYTE, image->pixels);
+    }
+
+    void draw() {
+        gl::enable(gl_DEPTH_TEST);
+        gl::enable(gl_BLEND);
+        gl::blendFunc(gl_SRC_ALPHA, gl_ONE_MINUS_SRC_ALPHA);
+        gl::clear(gl_DEPTH_BUFFER_BIT);
+
+        gl::useProgram(program);
+
+        auto mat = Mat4()
+            * Mat4::uiOrtho(800, 600)
+            * Mat4::translate(50, 50)
+            * Mat4::scale(700, 900)
+            ;
+        gl::uniformMatrix4fv(matrixLoc, false, &mat);
+
+        gl::bindBuffer(gl_ARRAY_BUFFER, verts);
+        gl::vertexAttribPointer(posLoc, 2, gl_FLOAT, false, 0, 0);
+        gl::bindBuffer(gl_ARRAY_BUFFER, texUvs);
+        gl::vertexAttribPointer(texUvLoc, 2, gl_FLOAT, false, 0, 0);
+        gl::bindTexture(gl_TEXTURE_2D, texId);
+        gl::drawArrays(gl_TRIANGLES, 0, 12);
+    }
+} gui;
 
 bool isHeld[256];
 void onKeyDown(int key) {
-    isHeld[key] = true;
+    isHeld[(unsigned char)key] = true;
 }
 
 void onKeyUp(int key) {
-    isHeld[key] = false;
+    isHeld[(unsigned char)key] = false;
 }
 
 void init(int w, int h) {
@@ -149,8 +229,10 @@ void init(int w, int h) {
 void frame() {
     int dx = isHeld[(int)'d'] - isHeld[(int)'a'];
     int dy = isHeld[(int)'s'] - isHeld[(int)'w'];
-    program.rot += dx * TAU * 0.7 / 60;
-    program.dist += dy * 2.5 / 60;
-    if (program.dist < 1.25) { program.dist = 1.25; }
-    program.frame();
+    world.rot += dx * TAU * 0.7 / 60;
+    world.dist += dy * 2.5 / 60;
+    if (world.dist < 1.25) { world.dist = 1.25; }
+
+    world.draw();
+    gui.draw();
 }

@@ -26,6 +26,12 @@ import gl {
     func bindBuffer(u32, any);
     func bufferData(u32, buffer, u32);
 
+    // textures
+    func createTexture() -> any;
+    func bindTexture(s32, any);
+    func texParameteri(s32, s32, s32);
+    func texImage2D(s32, u32, s32, u32, u32, u32, s32, s32, u8buffer);
+
     // clearing
     func clearColor(f32, f32, f32, f32);
     func clear(u32);
@@ -38,6 +44,7 @@ import gl {
 
     func cullFace(s32);
     func enable(s32);
+    func blendFunc(s32, s32);
 }
 
 import input {
@@ -109,6 +116,14 @@ enum GlConstant {
     gl_UNSIGNED_INT = 0x1405,
     gl_FLOAT = 0x1406,
 
+    // pixel formats
+    gl_DEPTH_COMPONENT = 0x1902,
+    gl_ALPHA = 0x1906,
+    gl_RGB = 0x1907,
+    gl_RGBA = 0x1908,
+    gl_LUMINANCE = 0x1909,
+    gl_LUMINANCE_ALPHA = 0x190A,
+
     // culling
     gl_CULL_FACE = 0x0B44,
     gl_FRONT = 0x0404,
@@ -124,9 +139,39 @@ enum GlConstant {
     gl_SAMPLE_COVERAGE = 0x80A0,
     gl_SCISSOR_TEST = 0x0C11,
     gl_STENCIL_TEST = 0x0B90,
+
+    // textures
+    gl_NEAREST = 0x2600,
+    gl_LINEAR = 0x2601,
+    gl_NEAREST_MIPMAP_NEAREST = 0x2700,
+    gl_LINEAR_MIPMAP_NEAREST = 0x2701,
+    gl_NEAREST_MIPMAP_LINEAR = 0x2702,
+    gl_LINEAR_MIPMAP_LINEAR = 0x2703,
+    gl_TEXTURE_MAG_FILTER = 0x2800,
+    gl_TEXTURE_MIN_FILTER = 0x2801,
+    gl_TEXTURE_WRAP_S = 0x2802,
+    gl_TEXTURE_WRAP_T = 0x2803,
+    gl_TEXTURE_2D = 0x0DE1,
+    gl_TEXTURE = 0x1702,
+    gl_TEXTURE_CUBE_MAP = 0x8513,
+    gl_TEXTURE_BINDING_CUBE_MAP = 0x8514,
+    gl_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515,
+    gl_TEXTURE_CUBE_MAP_NEGATIVE_X = 0x8516,
+    gl_TEXTURE_CUBE_MAP_POSITIVE_Y = 0x8517,
+    gl_TEXTURE_CUBE_MAP_NEGATIVE_Y = 0x8518,
+    gl_TEXTURE_CUBE_MAP_POSITIVE_Z = 0x8519,
+    gl_TEXTURE_CUBE_MAP_NEGATIVE_Z = 0x851A,
+    gl_MAX_CUBE_MAP_TEXTURE_SIZE = 0x851C,
+    gl_TEXTURE0 = 0x84C0, // TEXTURE1 through 31 = TEXTURE_0+n
+    gl_ACTIVE_TEXTURE = 0x84E0,
+    gl_REPEAT = 0x2901,
+    gl_CLAMP_TO_EDGE = 0x812F,
+    gl_MIRRORED_REPEAT = 0x8370,
 };
 
 #include <string>
+
+#include "vec3.h"
 
 void* loadShader(GlConstant ty, const char* text) {
     void* shader = gl::createShader(ty);
@@ -151,4 +196,36 @@ void* loadProgram(const char* vertText, const char* fragText) {
         program = nullptr;
     }
     return program;
+}
+
+template <typename T>
+void* createVbo(Buffer<T> buffer) {
+    void* vbo = gl::createBuffer();
+    gl::bindBuffer(gl_ARRAY_BUFFER, vbo);
+    gl::bufferData(gl_ARRAY_BUFFER, &buffer, gl_STATIC_DRAW);
+    return vbo;
+}
+
+Buffer<Vec3> cubeModel() {
+    float h = 0.5; // cube size; using 0.5 for centered unit cube
+    // ABCD on bottom, EFGH on top
+    Vec3 A(-h, -h, -h);
+    Vec3 B(-h, +h, -h);
+    Vec3 C(+h, +h, -h);
+    Vec3 D(+h, -h, -h);
+    Vec3 E(-h, -h, +h);
+    Vec3 F(-h, +h, +h);
+    Vec3 G(+h, +h, +h);
+    Vec3 H(+h, -h, +h);
+
+    // 3 verts per tri, 2 tris per face, 6 faces
+    const int nTris = 3 * 2 * 6;
+    return Buffer<Vec3>(nTris, (Vec3[nTris]){
+        A, B, C, C, D, A, // bottom
+        A, E, F, F, B, A, // left
+        A, D, H, H, E, A, // front
+        D, C, G, G, H, D, // right
+        B, F, G, G, C, B, // back
+        E, H, G, G, F, E, // top
+    });
 }
