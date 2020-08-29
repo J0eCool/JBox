@@ -19,7 +19,7 @@ import gl {
     func getUniformLocation(any, string) -> any;
 
     func uniform2f(any, f32, f32);
-    func uniformMatrix4fv(any, u1, f32buffer);
+    func uniformMatrix4fv(any, u1, array(f32));
 
     // vbos
     func createBuffer() -> any;
@@ -31,7 +31,7 @@ import gl {
     func createTexture() -> any;
     func bindTexture(s32, any);
     func texParameteri(s32, s32, s32);
-    func texImage2D(s32, u32, s32, u32, u32, u32, s32, s32, u8buffer);
+    func texImage2D(s32, u32, s32, u32, u32, u32, s32, s32, array(u8));
 
     // clearing
     func clearColor(f32, f32, f32, f32);
