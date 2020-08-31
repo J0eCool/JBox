@@ -201,12 +201,15 @@ let wasm = {
         let components = {
             'circles': circlesComponent,
             'game': gameComponent,
+            'lexer': lexerComponent,
             'life': lifeComponent,
             'terminal': terminalComponent,
         };
         return components[name].instantiate(imports).then((mod) => {
             loadedModules[name] = mod;
-            callback(mod);
+            if (callback) {
+                callback(mod);
+            }
             return mod;
         });
     },
@@ -229,8 +232,14 @@ let loadedModules = {
 };
 
 async function main() {
+    let lexer = await wasm.loadModule('lexer', loadedModules);
+    console.log('Lexing!');
+    let lexInput = 'print-line  (+ 2 (* 3 4))';
+    let tokens = lexer.lex(lexInput);
+    console.log('tokens:', tokens);
+
     // Load modules
-    let mod = await wasm.loadModule('game', loadedModules, () => {});
+    let mod = await wasm.loadModule('game', loadedModules);
 
     mod.init(resolution.width, resolution.height);
 

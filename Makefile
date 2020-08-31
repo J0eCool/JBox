@@ -2,6 +2,7 @@ IT_TOOLS=../it-tools/src
 FILES=out/index.html out/style.css out/shell.js \
 out/circles.wasm \
 out/game.wasm \
+out/lexer.wasm \
 out/life.wasm \
 out/terminal.wasm \
 
