@@ -234,7 +234,7 @@ let loadedModules = {
 async function main() {
     let lexer = await wasm.loadModule('lexer', loadedModules);
     console.log('Lexing!');
-    let lexInput = 'print-line  (+ 2 (* 3 4))';
+    let lexInput = await fetch('test.txt').then((x) => x.text());
     let tokens = lexer.lex(lexInput);
     console.log('tokens:', tokens);
 

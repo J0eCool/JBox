@@ -5,6 +5,7 @@ out/game.wasm \
 out/lexer.wasm \
 out/life.wasm \
 out/terminal.wasm \
+out/test.txt \
 
 OPT=-O1
 WABT_FLAGS=--enable-simd
@@ -40,3 +41,5 @@ out/%.css: out src/%.css
 	cp src/$*.css out/$*.css
 out/%.js: out src/%.js
 	cp src/$*.js out/$*.js
+out/%.txt: out src/%.txt
+	cp src/$*.txt out/$*.txt
