@@ -8,10 +8,19 @@ type Image = struct {
     height: s32;
 }
 
+type MouseEvent = struct {
+    button: s32;
+    x: f32;
+    y: f32;
+}
+
 import input {
     func log(string, s32);
     func registerOnKeyDown(func(s32));
     func registerOnKeyUp(func(s32));
+    func registerOnMouseDown(func(MouseEvent));
+    func registerOnMouseUp(func(MouseEvent));
+    func registerOnMouseMove(func(MouseEvent));
 }
 import imageDrawing {
     func loadImage(string, func(Image));
@@ -256,10 +265,36 @@ void onKeyUp(int key) {
     isHeld[(unsigned char)key] = false;
 }
 
+bool isMouseDown = false;
+Vec3 mousePos;
+void onMouseDown(MouseEvent* event) {
+    isMouseDown = true;
+    mousePos = Vec3(event->x, event->y);
+}
+void onMouseUp(MouseEvent* event) {
+    isMouseDown = false;
+}
+void onMouseMove(MouseEvent* event) {
+    if (!isMouseDown) {
+        return;
+    }
+
+    auto pos = Vec3(event->x, event->y);
+    auto delta = mousePos - pos;
+    mousePos = pos;
+    world.rot -= delta.x * TAU;
+    world.dist += delta.y * 2.5;
+}
+
 float lastFrame;
 void init(int w, int h) {
     input::registerOnKeyDown(onKeyDown);
     input::registerOnKeyUp(onKeyUp);
+
+    input::registerOnMouseDown(onMouseDown);
+    input::registerOnMouseUp(onMouseUp);
+    input::registerOnMouseMove(onMouseMove);
+
     lastFrame = time::now();
 }
 

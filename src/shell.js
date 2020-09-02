@@ -76,38 +76,54 @@ let resolution = {
 
 // -----------------------
 
-function getKeyCode(event) {
-    // Custom enum of key values because what are JS KeyboardEvents even
-    let key = {
-        'Shift': 1,
-        'Control': 2,
-        'Alt': 3,
-        'Enter': 4,
-        'Escape': 5,
-        'Backspace': 6,
-        'Delete': 7,
-    }[event.key];
-    if (key !== undefined) {
-        return key;
-    }
-    if (event.key.length == 1) {
-        return event.key.charCodeAt(0);
-    }
-    return 0;
+function keyboardEventWrapper(callback) {
+    return (event) => {
+        // Custom enum of key values because what are JS KeyboardEvents even
+        let key = {
+            'Shift': 1,
+            'Control': 2,
+            'Alt': 3,
+            'Enter': 4,
+            'Escape': 5,
+            'Backspace': 6,
+            'Delete': 7,
+        }[event.key];
+        if (key !== undefined) {
+            return callback(key);
+        }
+        if (event.key.length == 1) {
+            return callback(event.key.charCodeAt(0));
+        }
+        return callback(0);
+    };
+}
+function mouseEventWrapper(callback) {
+    return function(event) {
+        return callback({
+            button: event.button,
+            x: event.clientX / canvas.clientWidth,
+            y: event.clientY / canvas.clientHeight,
+        });
+    };
 }
 let input = {
     log(msg, x) {
         console.log(msg, x);
     },
     registerOnKeyDown(callback) {
-        document.onkeydown = (event) => {
-            callback(getKeyCode(event));
-        };
+        document.onkeydown = keyboardEventWrapper(callback);
     },
     registerOnKeyUp(callback) {
-        document.onkeyup = (event) => {
-            callback(getKeyCode(event));
-        };
+        document.onkeyup = keyboardEventWrapper(callback);
+    },
+    registerOnMouseDown(callback) {
+        canvas.onmousedown = mouseEventWrapper(callback);
+    },
+    registerOnMouseUp(callback) {
+        canvas.onmouseup = mouseEventWrapper(callback);
+    },
+    registerOnMouseMove(callback) {
+        canvas.onmousemove = mouseEventWrapper(callback);
     },
 };
 let imageDrawing = {
