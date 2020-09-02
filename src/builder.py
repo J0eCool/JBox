@@ -45,7 +45,7 @@ def run_cmd(msg, cmd, cwd=None):
 
 ########## program start
 
-node = subprocess.Popen(['node', '../src/server.js'], cwd=os.path.join(projectpath, 'out'))
+node = subprocess.Popen(['node', 'src/server.js'], cwd=projectpath)
 try:
     while True:
         should_build = False
@@ -55,11 +55,6 @@ try:
             should_build = True
         if should_build:
             run_cmd('building', [MAKE, 'build'], cwd=projectpath)
-
-        if changed_in_dir('assets/textures'):
-            log('Copying texture assets')
-            shutil.rmtree('out/textures', ignore_errors=True)
-            shutil.copytree('assets/textures', 'out/textures')
 
         time.sleep(1.0)
 finally:

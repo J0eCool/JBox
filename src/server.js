@@ -5,14 +5,20 @@ const port = 8080;
 
 const server = http.createServer((req, res) => {
     console.log('Request at:', req.url);
-    let path = './' + req.url;
+    let path = './serve' + req.url;
     if (req.url === '/') {
-        path = './index.html';
+        path = './serve/index.html';
+    }
+    try {
+        fs.accessSync(path);
+    } catch (err) {
+        path = './out' + req.url;
     }
 
+    console.log('Reading from:', path);
     fs.readFile(path, (err, data) => {
         if (err) {
-            console.log('ERROR:', err);
+            console.error(err);
             return;
         }
         let mime = 'text/plain';
@@ -30,7 +36,7 @@ const server = http.createServer((req, res) => {
         })
         res.end(data);
     });
-})
+});
 server.listen(port, (err) => {
     if (err) {
         console.log('ERROR:', err);

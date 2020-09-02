@@ -1,11 +1,10 @@
 IT_TOOLS=../it-tools/src
-FILES=out/index.html out/style.css out/shell.js \
+FILES=\
 out/circles.wasm \
 out/game.wasm \
 out/lexer.wasm \
 out/life.wasm \
 out/terminal.wasm \
-out/test.txt \
 
 OPT=-O1
 WABT_FLAGS=--enable-simd
@@ -34,12 +33,3 @@ out/%.wasm out/%.itl: src/modules/%.cpp
 		-Iout -Isrc/modules -std=c++11 --no-entry --profiling-funcs -Wall
 	wasm2wat $(WABT_FLAGS) out/$*.wasm -o out/$*.wat
 	wasm-decompile $(WABT_FLAGS) out/$*.wasm -o out/$*.wade
-
-out/%.html: out src/%.html
-	cp src/$*.html out/$*.html
-out/%.css: out src/%.css
-	cp src/$*.css out/$*.css
-out/%.js: out src/%.js
-	cp src/$*.js out/$*.js
-out/%.txt: out src/%.txt
-	cp src/$*.txt out/$*.txt
