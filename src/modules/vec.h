@@ -15,3 +15,7 @@ struct Vec {
     OP(/)
     #undef OP
 };
+
+// where there are vecs, there may be angles; here until I find a better place
+const float PI = 3.1415926535;
+const float TAU = 2*PI;

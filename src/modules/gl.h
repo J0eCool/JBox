@@ -18,7 +18,15 @@ import gl {
     func getAttribLocation(any, string) -> s32;
     func getUniformLocation(any, string) -> any;
 
+    // uniforms
+    func uniform1f(any, f32);
     func uniform2f(any, f32, f32);
+    func uniform3f(any, f32, f32, f32);
+    func uniform4f(any, f32, f32, f32, f32);
+    func uniform1i(any, s32);
+    func uniform2i(any, s32, s32);
+    func uniform3i(any, s32, s32, s32);
+    func uniform4i(any, s32, s32, s32, s32);
     func uniformMatrix4fv(any, u1, array(f32));
 
     // vbos

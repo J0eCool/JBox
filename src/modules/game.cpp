@@ -35,16 +35,22 @@ export {
 
 /**IT_END**/
 
-#include "common.h"
 #include "mat.h"
 #include "vec.h"
 
 #include <string>
 
+Vec red(1.0, 0.0, 0.0);
+Vec green(0.0, 1.0, 0.0);
+Vec blue(0.0, 0.0, 1.0);
+Vec yellow(1.0, 1.0, 0.0);
+Vec cyan(0.0, 1.0, 1.0);
+Vec magenta(1.0, 0.0, 1.0);
+
 class WorldScene {
     void* program;
     int posLoc;
-    int colorLoc;
+    void* colorLoc;
     void* matrixLoc;
     void* verts;
     void* colors;
@@ -54,15 +60,15 @@ public:
     WorldScene() {
         const char* vertShader = R"(
             attribute vec4 aPos;
-            attribute vec3 aColor;
 
             uniform mat4 uMatrix;
+            uniform vec3 uColor;
 
             varying vec3 vColor;
 
             void main() {
                 gl_Position = uMatrix * aPos;
-                vColor = aColor;
+                vColor = uColor;
             }
         )";
         const char* fragShader = R"(
@@ -77,17 +83,11 @@ public:
 
         program = loadProgram(vertShader, fragShader);
         posLoc = gl::getAttribLocation(program, "aPos");
-        colorLoc = gl::getAttribLocation(program, "aColor");
+        colorLoc = gl::getUniformLocation(program, "uColor");
         matrixLoc = gl::getUniformLocation(program, "uMatrix");
 
         verts = createVbo(cubeModel());
 
-        Vec red(1.0, 0.0, 0.0);
-        Vec green(0.0, 1.0, 0.0);
-        Vec blue(0.0, 0.0, 1.0);
-        Vec yellow(1.0, 1.0, 0.0);
-        Vec cyan(0.0, 1.0, 1.0);
-        Vec magenta(1.0, 0.0, 1.0);
         colors = createVbo(Buffer<Vec> (36, (Vec[36]){
             red, red, red, red, red, red,
             green, green, green, green, green, green,
@@ -98,7 +98,6 @@ public:
         }));
 
         gl::enableVertexAttribArray(posLoc);
-        gl::enableVertexAttribArray(colorLoc);
     }
 
     void draw() {
@@ -109,21 +108,21 @@ public:
 
         gl::useProgram(program);
 
+        gl::bindBuffer(gl_ARRAY_BUFFER, verts);
+        gl::vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
+
         auto mat = Mat()
             * Mat::perspective(90, 1.333, 0.1, 100.0)
             * Mat::translate(0, 0, -dist)
             * Mat::rotateY(rot)
             ;
         gl::uniformMatrix4fv(matrixLoc, false, &mat);
-
-        gl::bindBuffer(gl_ARRAY_BUFFER, verts);
-        gl::vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
-        gl::bindBuffer(gl_ARRAY_BUFFER, colors);
-        gl::vertexAttribPointer(colorLoc, 3, gl_FLOAT, false, 0, 0);
+        gl::uniform3f(colorLoc, 1.0, 0.0, 0.0);
         gl::drawArrays(gl_TRIANGLES, 0, 36);
 
         mat = mat * Mat::translate(1.1, 0);
         gl::uniformMatrix4fv(matrixLoc, false, &mat);
+        gl::uniform3f(colorLoc, 0.0, 1.0, 0.0);
         gl::drawArrays(gl_TRIANGLES, 0, 36);
     }
 } world;
