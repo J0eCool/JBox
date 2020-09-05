@@ -39,6 +39,7 @@ export {
 #include "vec.h"
 
 #include <string>
+#include <vector>
 
 Vec red(1.0, 0.0, 0.0);
 Vec green(0.0, 1.0, 0.0);
@@ -50,54 +51,63 @@ Vec magenta(1.0, 0.0, 1.0);
 class WorldScene {
     void* program;
     int posLoc;
-    void* colorLoc;
     void* matrixLoc;
+    void* colorLoc;
+    void* lightPosLoc;
     void* verts;
-    void* colors;
+
+    struct Cube {
+        Vec pos;
+        Vec size;
+        Vec color;
+    };
+    std::vector<Cube> cubes;
 public:
-    float dist = 3.0;
+    float dist = 5.0;
     float rot = 0.0;
     WorldScene() {
         const char* vertShader = R"(
             attribute vec4 aPos;
 
             uniform mat4 uMatrix;
-            uniform vec3 uColor;
 
-            varying vec3 vColor;
+            varying vec3 vPos;
 
             void main() {
-                gl_Position = uMatrix * aPos;
-                vColor = uColor;
+                vec4 pos = uMatrix * aPos;
+                gl_Position = pos;
+                vPos = pos.xyz;
             }
         )";
         const char* fragShader = R"(
             precision mediump float;
 
-            varying vec3 vColor;
+            uniform vec3 uColor;
+            uniform vec3 uLightPos;
+
+            varying vec3 vPos;
 
             void main() {
-                gl_FragColor = vec4(vColor, 1);
+                float range = 3.0;
+                float dist = length(vPos - uLightPos);
+                float lum = (range - dist) / range;
+                float light = clamp(1.0 - lum*lum, 0.0, 1.0);
+                gl_FragColor = vec4(uColor * light, 1);
             }
         )";
 
         program = loadProgram(vertShader, fragShader);
         posLoc = gl::getAttribLocation(program, "aPos");
-        colorLoc = gl::getUniformLocation(program, "uColor");
         matrixLoc = gl::getUniformLocation(program, "uMatrix");
+        colorLoc = gl::getUniformLocation(program, "uColor");
+        lightPosLoc = gl::getUniformLocation(program, "uLightPos");
 
         verts = createVbo(cubeModel());
 
-        colors = createVbo(Buffer<Vec> (36, (Vec[36]){
-            red, red, red, red, red, red,
-            green, green, green, green, green, green,
-            blue, blue, blue, blue, blue, blue,
-            yellow, yellow, yellow, yellow, yellow, yellow,
-            cyan, cyan, cyan, cyan, cyan, cyan,
-            magenta, magenta, magenta, magenta, magenta, magenta,
-        }));
-
-        gl::enableVertexAttribArray(posLoc);
+        cubes.push_back(Cube { Vec(0, 0.5, 0.75), Vec(1, 1, 1), Vec(1, 0, 0)});
+        cubes.push_back(Cube { Vec(1.5, 0, 1), Vec(1, 1, 2), Vec(0, 1, 0)});
+        cubes.push_back(Cube { Vec(-1.5, -0.5, 1), Vec(1, 1, 1), Vec(0, 1, 1)});
+        cubes.push_back(Cube { Vec(0, 0, 0), Vec(5, 5, 0.5), Vec(0.7, 0.7, 0.7)});
     }
 
     void draw() {
@@ -108,22 +118,26 @@ public:
 
         gl::useProgram(program);
 
+        gl::enableVertexAttribArray(posLoc);
+
         gl::bindBuffer(gl_ARRAY_BUFFER, verts);
         gl::vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
 
-        auto mat = Mat()
-            * Mat::perspective(90, 1.333, 0.1, 100.0)
-            * Mat::translate(0, 0, -dist)
-            * Mat::rotateY(rot)
-            ;
-        gl::uniformMatrix4fv(matrixLoc, false, &mat);
-        gl::uniform3f(colorLoc, 1.0, 0.0, 0.0);
-        gl::drawArrays(gl_TRIANGLES, 0, 36);
-
-        mat = mat * Mat::translate(1.1, 0);
-        gl::uniformMatrix4fv(matrixLoc, false, &mat);
-        gl::uniform3f(colorLoc, 0.0, 1.0, 0.0);
-        gl::drawArrays(gl_TRIANGLES, 0, 36);
+        // auto camera = Mat::rotateX(PI/2) * Mat::translate(0, -dist, 2);
+        auto cameraPos = Vec::polar2d(rot, dist) + Vec(0, 0, 2);
+        // auto camera = Mat::translate(cameraPos) * Mat::rotateX(PI / 2);// * Mat::rotateY(rot);
+        auto camera = Mat::lookAt(cameraPos, Vec(0, 0, 1));
+        auto view = camera.inverse();
+        auto proj = Mat::perspective(70, 1.333, 0.1, 100.0);
+        auto viewproj = proj * view;
+        auto lightPos = viewproj * Vec(1, 1, 1);
+        gl::uniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+        for (auto& cube : cubes) {
+            auto mat = viewproj * Mat::translate(cube.pos) * Mat::scale(cube.size);
+            gl::uniformMatrix4fv(matrixLoc, false, &mat);
+            gl::uniform3f(colorLoc, cube.color.x, cube.color.y, cube.color.z);
+            gl::drawArrays(gl_TRIANGLES, 0, 36);
+        }
     }
 } world;
 
