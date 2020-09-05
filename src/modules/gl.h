@@ -172,7 +172,7 @@ enum GlConstant {
 
 #include <string>
 
-#include "vec3.h"
+#include "vec.h"
 
 void* loadShader(GlConstant ty, const char* text) {
     void* shader = gl::createShader(ty);
@@ -207,21 +207,21 @@ void* createVbo(Buffer<T> buffer, GlConstant bufferType = gl_STATIC_DRAW) {
     return vbo;
 }
 
-Buffer<Vec3> cubeModel() {
+Buffer<Vec> cubeModel() {
     float h = 0.5; // cube size; using 0.5 for centered unit cube
     // ABCD on bottom, EFGH on top
-    Vec3 A(-h, -h, -h);
-    Vec3 B(-h, +h, -h);
-    Vec3 C(+h, +h, -h);
-    Vec3 D(+h, -h, -h);
-    Vec3 E(-h, -h, +h);
-    Vec3 F(-h, +h, +h);
-    Vec3 G(+h, +h, +h);
-    Vec3 H(+h, -h, +h);
+    Vec A(-h, -h, -h);
+    Vec B(-h, +h, -h);
+    Vec C(+h, +h, -h);
+    Vec D(+h, -h, -h);
+    Vec E(-h, -h, +h);
+    Vec F(-h, +h, +h);
+    Vec G(+h, +h, +h);
+    Vec H(+h, -h, +h);
 
     // 3 verts per tri, 2 tris per face, 6 faces
     const int nTris = 3 * 2 * 6;
-    return Buffer<Vec3>(nTris, (Vec3[nTris]){
+    return Buffer<Vec>(nTris, (Vec[nTris]){
         A, B, C, C, D, A, // bottom
         A, E, F, F, B, A, // left
         A, D, H, H, E, A, // front

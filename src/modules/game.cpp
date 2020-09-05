@@ -36,8 +36,8 @@ export {
 /**IT_END**/
 
 #include "common.h"
-#include "mat4.h"
-#include "vec3.h"
+#include "mat.h"
+#include "vec.h"
 
 #include <string>
 
@@ -82,13 +82,13 @@ public:
 
         verts = createVbo(cubeModel());
 
-        Vec3 red(1.0, 0.0, 0.0);
-        Vec3 green(0.0, 1.0, 0.0);
-        Vec3 blue(0.0, 0.0, 1.0);
-        Vec3 yellow(1.0, 1.0, 0.0);
-        Vec3 cyan(0.0, 1.0, 1.0);
-        Vec3 magenta(1.0, 0.0, 1.0);
-        colors = createVbo(Buffer<Vec3> (36, (Vec3[36]){
+        Vec red(1.0, 0.0, 0.0);
+        Vec green(0.0, 1.0, 0.0);
+        Vec blue(0.0, 0.0, 1.0);
+        Vec yellow(1.0, 1.0, 0.0);
+        Vec cyan(0.0, 1.0, 1.0);
+        Vec magenta(1.0, 0.0, 1.0);
+        colors = createVbo(Buffer<Vec> (36, (Vec[36]){
             red, red, red, red, red, red,
             green, green, green, green, green, green,
             blue, blue, blue, blue, blue, blue,
@@ -109,10 +109,10 @@ public:
 
         gl::useProgram(program);
 
-        auto mat = Mat4()
-            * Mat4::perspective(90, 1.333, 0.1, 100.0)
-            * Mat4::translate(0, 0, -dist)
-            * Mat4::rotateY(rot)
+        auto mat = Mat()
+            * Mat::perspective(90, 1.333, 0.1, 100.0)
+            * Mat::translate(0, 0, -dist)
+            * Mat::rotateY(rot)
             ;
         gl::uniformMatrix4fv(matrixLoc, false, &mat);
 
@@ -122,7 +122,7 @@ public:
         gl::vertexAttribPointer(colorLoc, 3, gl_FLOAT, false, 0, 0);
         gl::drawArrays(gl_TRIANGLES, 0, 36);
 
-        mat = mat * Mat4::translate(1.1, 0);
+        mat = mat * Mat::translate(1.1, 0);
         gl::uniformMatrix4fv(matrixLoc, false, &mat);
         gl::drawArrays(gl_TRIANGLES, 0, 36);
     }
@@ -136,7 +136,7 @@ class UiScene {
     void* verts;
     void* texUvs;
     static void* texId;
-    Mat4 projection;
+    Mat projection;
 public:
     float dist = 3.0;
     float rot = 0.0;
@@ -195,7 +195,7 @@ public:
         texId = gl::createTexture();
         imageDrawing::loadImage("textures/font.png", UiScene::onFontLoad);
 
-        projection = Mat4::uiOrtho(800, 600);
+        projection = Mat::uiOrtho(800, 600);
     }
 
     static void onFontLoad(Image* image) {
@@ -218,12 +218,12 @@ public:
 
         char strBuff[128];
         snprintf(strBuff, sizeof(strBuff), "dist = %f", world.dist);
-        drawText(Vec3(50, 50), strBuff);
+        drawText(Vec(50, 50), strBuff);
         snprintf(strBuff, sizeof(strBuff), "rot  = %f", world.rot);
-        drawText(Vec3(50, 80), strBuff);
+        drawText(Vec(50, 80), strBuff);
     }
 
-    void drawText(Vec3 pos, std::string str) {
+    void drawText(Vec pos, std::string str) {
         gl::bindTexture(gl_TEXTURE_2D, texId);
         gl::bindBuffer(gl_ARRAY_BUFFER, verts);
         gl::vertexAttribPointer(posLoc, 2, gl_FLOAT, false, 0, 0);
@@ -248,8 +248,8 @@ public:
             gl::bufferSubData(gl_ARRAY_BUFFER, 0, &uvs);
             gl::vertexAttribPointer(texUvLoc, 2, gl_FLOAT, false, 0, 0);
 
-            auto cur = pos + Vec3(18*i, 0);
-            auto matrix = projection * Mat4::translate(cur) * Mat4::scale(18, 24);
+            auto cur = pos + Vec(18*i, 0);
+            auto matrix = projection * Mat::translate(cur) * Mat::scale(18, 24);
             gl::uniformMatrix4fv(matrixLoc, false, &matrix);
             gl::drawArrays(gl_TRIANGLES, 0, 12);
         }
@@ -266,10 +266,10 @@ void onKeyUp(int key) {
 }
 
 bool isMouseDown = false;
-Vec3 mousePos;
+Vec mousePos;
 void onMouseDown(MouseEvent* event) {
     isMouseDown = true;
-    mousePos = Vec3(event->x, event->y);
+    mousePos = Vec(event->x, event->y);
 }
 void onMouseUp(MouseEvent* event) {
     isMouseDown = false;
@@ -279,7 +279,7 @@ void onMouseMove(MouseEvent* event) {
         return;
     }
 
-    auto pos = Vec3(event->x, event->y);
+    auto pos = Vec(event->x, event->y);
     auto delta = mousePos - pos;
     mousePos = pos;
     world.rot -= delta.x * TAU;
