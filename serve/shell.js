@@ -2,54 +2,6 @@
 let canvas = document.getElementById('canvas');
 let gl = canvas.getContext('webgl2');
 
-// shaders
-function loadShader(type, source) {
-    let shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('Shader failed to compile: ' + gl.getShaderInfoLog(shader));
-        gl.deleteShader(shader);
-        shader = null;
-    }
-    return shader;
-}
-let vertShaderText = `
-    attribute vec4 aVertexPosition;
-    attribute vec2 aTexCoord;
-
-    varying vec2 vTexCoord;
-
-    void main() {
-        gl_Position = aVertexPosition;
-        vTexCoord = aTexCoord;
-    }
-`;
-let fragShaderText = `
-    precision mediump float;
-
-    uniform sampler2D uImage;
-
-    varying vec2 vTexCoord;
-
-    void main() {
-        gl_FragColor = texture2D(uImage, vTexCoord);
-    }
-`;
-let shaderProgram = gl.createProgram();
-gl.attachShader(shaderProgram, loadShader(gl.VERTEX_SHADER, vertShaderText));
-gl.attachShader(shaderProgram, loadShader(gl.FRAGMENT_SHADER, fragShaderText));
-gl.linkProgram(shaderProgram);
-if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    console.error('Program failed to link: ' + gl.getProgramInfoLog(shaderProgram));
-    shaderProgram = null;
-}
-let programInfo = {
-    program: shaderProgram,
-    vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-    texCoord: gl.getAttribLocation(shaderProgram, 'aTexCoord'),
-};
-
 // quad vbos
 let vertBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
@@ -126,37 +78,22 @@ let input = {
         canvas.onmousemove = mouseEventWrapper(callback);
     },
 };
-let imageDrawing = {
-    updateImage(image) {
-        // Clear
-        gl.clearColor(0, 0, 0, 1);
-        // gl.clearDepth(1.0);
-        // gl.enable(gl.DEPTH_TEST);
-        // gl.depthFunc(gl.LEQUAL);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-        // Copy image data to GPU
-        gl.bindTexture(gl.TEXTURE_2D, imageTex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, image.width, image.height, 0,
-            gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(image.pixels));
-
-        // Set shader attributes
-        gl.useProgram(programInfo.program);
-        gl.enableVertexAttribArray(programInfo.vertexPosition);
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
-        gl.vertexAttribPointer(programInfo.vertexPosition, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(programInfo.texCoord);
-        gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
-        gl.vertexAttribPointer(programInfo.texCoord, 2, gl.FLOAT, false, 0, 0);
-
-        // Draw
-        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+let nextFileId = 1;
+let files = {
+    loadText(url, callback, ctx) {
+        let id = nextFileId++;
+        fetch(url).then((resp) => resp.text()).then((text) => {
+            let data = {
+                id,
+                url,
+                text,
+            };
+            callback(data, ctx);
+        });
+        return id;
     },
-    loadImage(url, callback) {
+    loadImage(url, callback, ctx) {
+        let id = nextFileId++;
         let img = new Image();
         img.src = url;
         img.decode().then(() => {
@@ -165,12 +102,15 @@ let imageDrawing = {
             offCtx.drawImage(img, 0, 0);
             let offImg = offCtx.getImageData(0, 0, img.width, img.height);
             let image = {
+                id,
+                url,
                 pixels: offImg.data.buffer.slice(),
                 width: img.width,
                 height: img.height,
             };
-            callback(image);
+            callback(image, ctx);
         });
+        return id;
     },
 };
 let math = {
@@ -238,7 +178,7 @@ let wasm = {
 };
 
 let loadedModules = {
-    imageDrawing,
+    files,
     input,
     gl,
     math,

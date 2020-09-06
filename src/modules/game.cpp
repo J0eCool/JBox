@@ -1,19 +1,13 @@
 /**IT_START**/
 
+include "files.h"
 include "gl.h"
-
-type Image = struct {
-    pixels: buffer;
-    width: s32;
-    height: s32;
-}
 
 type MouseEvent = struct {
     button: s32;
     x: f32;
     y: f32;
 }
-
 import input {
     func log(string, s32);
     func registerOnKeyDown(func(s32));
@@ -22,9 +16,7 @@ import input {
     func registerOnMouseUp(func(MouseEvent));
     func registerOnMouseMove(func(MouseEvent));
 }
-import imageDrawing {
-    func loadImage(string, func(Image));
-}
+
 import time {
     func now() -> f32;
 }
@@ -48,6 +40,8 @@ Vec yellow(1.0, 1.0, 0.0);
 Vec cyan(0.0, 1.0, 1.0);
 Vec magenta(1.0, 0.0, 1.0);
 
+FileLoader loader;
+
 class WorldScene {
     void* program;
     int posLoc;
@@ -62,52 +56,33 @@ class WorldScene {
         Vec color;
     };
     std::vector<Cube> cubes;
+
+    const std::string fragUrl = "shaders/simple3d.frag";
+    const std::string vertUrl = "shaders/simple3d.vert";
 public:
     float dist = 5.0;
     float rot = 0.0;
     WorldScene() {
-        const char* vertShader = R"(
-            attribute vec4 aPos;
+        loader.beginFetch(fragUrl);
+        loader.beginFetch(vertUrl);
+    }
 
-            uniform mat4 uMatrix;
-
-            varying vec3 vPos;
-
-            void main() {
-                vec4 pos = uMatrix * aPos;
-                gl_Position = pos;
-                vPos = pos.xyz;
-            }
-        )";
-        const char* fragShader = R"(
-            precision mediump float;
-
-            uniform vec3 uColor;
-            uniform vec3 uLightPos;
-
-            varying vec3 vPos;
-
-            void main() {
-                float range = 3.0;
-                float dist = length(vPos - uLightPos);
-                float lum = (range - dist) / range;
-                float light = clamp(1.0 - lum*lum, 0.0, 1.0);
-                gl_FragColor = vec4(uColor * light, 1);
-            }
-        )";
-
-        program = loadProgram(vertShader, fragShader);
+    void onFilesLoaded() {
+        auto vertText = loader.read(vertUrl);
+        auto fragText = loader.read(fragUrl);
+        program = loadProgram(vertText.c_str(), fragText.c_str());
         posLoc = gl::getAttribLocation(program, "aPos");
         matrixLoc = gl::getUniformLocation(program, "uMatrix");
         colorLoc = gl::getUniformLocation(program, "uColor");
         lightPosLoc = gl::getUniformLocation(program, "uLightPos");
 
-        verts = createVbo(cubeModel());
+        auto cube = cubeModel();
+        verts = createVbo(cube);
 
-        cubes.push_back(Cube { Vec(0, 0.5, 0.75), Vec(1, 1, 1), Vec(1, 0, 0)});
-        cubes.push_back(Cube { Vec(1.5, 0, 1), Vec(1, 1, 2), Vec(0, 1, 0)});
-        cubes.push_back(Cube { Vec(-1.5, -0.5, 1), Vec(1, 1, 1), Vec(0, 1, 1)});
-        cubes.push_back(Cube { Vec(0, 0, 0), Vec(5, 5, 0.5), Vec(0.7, 0.7, 0.7)});
+        cubes.push_back(Cube { Vec(0, 0.5, 0.75), Vec(1, 1, 1), Vec(1, 0, 0) });
+        cubes.push_back(Cube { Vec(1.5, 0, 1), Vec(1, 1, 2), Vec(0, 1, 0) });
+        cubes.push_back(Cube { Vec(-1.5, -0.5, 1), Vec(1, 1, 1), Vec(0, 1, 1) });
+        cubes.push_back(Cube { Vec(0, 0, 0), Vec(5, 5, 0.5), Vec(0.7, 0.7, 0.7) });
     }
 
     void draw() {
@@ -124,7 +99,7 @@ public:
         gl::vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
 
         // auto camera = Mat::rotateX(PI/2) * Mat::translate(0, -dist, 2);
-        auto cameraPos = Vec::polar2d(rot, dist) + Vec(0, 0, 2);
+        auto cameraPos = Vec::polar2d(-rot, dist) + Vec(0, 0, 2);
         // auto camera = Mat::translate(cameraPos) * Mat::rotateX(PI / 2);// * Mat::rotateY(rot);
         auto camera = Mat::lookAt(cameraPos, Vec(0, 0, 1));
         auto view = camera.inverse();
@@ -150,36 +125,19 @@ class UiScene {
     void* texUvs;
     static void* texId;
     Mat projection;
+
+    const std::string fragUrl = "shaders/simple2d.frag";
+    const std::string vertUrl = "shaders/simple2d.vert";
 public:
-    float dist = 3.0;
-    float rot = 0.0;
     UiScene() {
-        const char* vertShader = R"(
-            attribute vec4 aPos;
-            attribute vec2 aTexUv;
+        loader.beginFetch(fragUrl);
+        loader.beginFetch(vertUrl);
+    }
 
-            uniform mat4 uMatrix;
-
-            varying vec2 vTexUv;
-
-            void main() {
-                gl_Position = uMatrix * aPos;
-                vTexUv = aTexUv;
-            }
-        )";
-        const char* fragShader = R"(
-            precision mediump float;
-
-            uniform sampler2D uImage;
-
-            varying vec2 vTexUv;
-
-            void main() {
-                gl_FragColor = texture2D(uImage, vTexUv);
-            }
-        )";
-
-        program = loadProgram(vertShader, fragShader);
+    void onFilesLoaded() {
+        auto vertText = loader.read(vertUrl);
+        auto fragText = loader.read(fragUrl);
+        program = loadProgram(vertText.c_str(), fragText.c_str());
         posLoc = gl::getAttribLocation(program, "aPos");
         texUvLoc = gl::getAttribLocation(program, "aTexUv");
         matrixLoc = gl::getUniformLocation(program, "uMatrix");
@@ -206,12 +164,12 @@ public:
         gl::enableVertexAttribArray(texUvLoc);
 
         texId = gl::createTexture();
-        imageDrawing::loadImage("textures/font.png", UiScene::onFontLoad);
+        files::loadImage("textures/font.png", UiScene::onFontLoad);
 
         projection = Mat::uiOrtho(800, 600);
     }
 
-    static void onFontLoad(Image* image) {
+    static void onFontLoad(ImageResponse* image) {
         gl::bindTexture(gl_TEXTURE_2D, texId);
         gl::texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_CLAMP_TO_EDGE);
         gl::texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_T, gl_CLAMP_TO_EDGE);
@@ -311,7 +269,17 @@ void init(int w, int h) {
     lastFrame = time::now();
 }
 
+bool didLoadFiles = false;
 void frame() {
+    if (!didLoadFiles) {
+        if (loader.anyPending()) {
+            return;
+        }
+        world.onFilesLoaded();
+        gui.onFilesLoaded();
+        didLoadFiles = true;
+    }
+
     auto t = time::now();
     auto dt = t - lastFrame;
     lastFrame = t;
