@@ -17,10 +17,6 @@ import files {
     func loadImage(string, func(ImageResponse)) -> s32;
 }
 
-import input {
-    func log(string, s32);
-}
-
 /**IT_END**/
 
 #include <map>
@@ -34,11 +30,8 @@ class FileLoader {
 
     static void onTextLoad(TextResponse* response, int loaderPtr) {
         auto loader = (FileLoader*)loaderPtr;
-        input::log("loaded", 0);
-        input::log(response->url, response->id);
         loader->textResponses[std::string(response->url)] = response;
         loader->openRequests.erase(response->id);
-        input::log("remaining:", loader->openRequests.size());
     }
 public:
     void beginFetch(std::string const& url) {

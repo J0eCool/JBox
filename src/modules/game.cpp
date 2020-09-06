@@ -45,10 +45,13 @@ FileLoader loader;
 class WorldScene {
     void* program;
     int posLoc;
-    void* matrixLoc;
+    int normalLoc;
+    void* modelViewProjLoc;
+    void* modelLoc;
     void* colorLoc;
     void* lightPosLoc;
     void* verts;
+    void* normals;
 
     struct Cube {
         Vec pos;
@@ -72,12 +75,16 @@ public:
         auto fragText = loader.read(fragUrl);
         program = loadProgram(vertText.c_str(), fragText.c_str());
         posLoc = gl::getAttribLocation(program, "aPos");
-        matrixLoc = gl::getUniformLocation(program, "uMatrix");
+        normalLoc = gl::getAttribLocation(program, "aNormal");
+        modelViewProjLoc = gl::getUniformLocation(program, "uModelViewProj");
+        modelLoc = gl::getUniformLocation(program, "uModel");
         colorLoc = gl::getUniformLocation(program, "uColor");
         lightPosLoc = gl::getUniformLocation(program, "uLightPos");
 
         auto cube = cubeModel();
+        auto norm = computeNormals(cube);
         verts = createVbo(cube);
+        normals = createVbo(norm);
 
         cubes.push_back(Cube { Vec(0, 0.5, 0.75), Vec(1, 1, 1), Vec(1, 0, 0) });
         cubes.push_back(Cube { Vec(1.5, 0, 1), Vec(1, 1, 2), Vec(0, 1, 0) });
@@ -97,6 +104,8 @@ public:
 
         gl::bindBuffer(gl_ARRAY_BUFFER, verts);
         gl::vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
+        gl::bindBuffer(gl_ARRAY_BUFFER, normals);
+        gl::vertexAttribPointer(normalLoc, 3, gl_FLOAT, false, 0, 0);
 
         // auto camera = Mat::rotateX(PI/2) * Mat::translate(0, -dist, 2);
         auto cameraPos = Vec::polar2d(-rot, dist) + Vec(0, 0, 2);
@@ -104,12 +113,14 @@ public:
         auto camera = Mat::lookAt(cameraPos, Vec(0, 0, 1));
         auto view = camera.inverse();
         auto proj = Mat::perspective(70, 1.333, 0.1, 100.0);
-        auto viewproj = proj * view;
-        auto lightPos = viewproj * Vec(1, 1, 1);
+        auto viewProj = proj * view;
+        auto lightPos = cameraPos + Vec(0, 0, 1);
         gl::uniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
         for (auto& cube : cubes) {
-            auto mat = viewproj * Mat::translate(cube.pos) * Mat::scale(cube.size);
-            gl::uniformMatrix4fv(matrixLoc, false, &mat);
+            auto model = Mat::translate(cube.pos) * Mat::scale(cube.size);
+            auto mvp = viewProj * model;
+            gl::uniformMatrix4fv(modelViewProjLoc, false, &mvp);
+            gl::uniformMatrix4fv(modelLoc, false, &model);
             gl::uniform3f(colorLoc, cube.color.x, cube.color.y, cube.color.z);
             gl::drawArrays(gl_TRIANGLES, 0, 36);
         }

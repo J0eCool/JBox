@@ -238,3 +238,14 @@ Buffer<Vec> cubeModel() {
         E, H, G, G, F, E, // top
     });
 }
+
+Buffer<Vec> computeNormals(Buffer<Vec> const& verts) {
+    auto ret = Buffer<Vec>(verts.size());
+    for (int i = 0; i < verts.size(); i += 3) {
+        auto a = verts[i+1] - verts[i+0];
+        auto b = verts[i+2] - verts[i+1];
+        auto normal = a.cross(b).unit();
+        ret[i] = ret[i+1] = ret[i+2] = normal;
+    }
+    return ret;
+}
