@@ -114,7 +114,7 @@ let files = {
     },
 };
 let math = {
-    rnd() {
+    rand() {
         return Math.random();
     },
     sin: Math.sin,
@@ -192,7 +192,10 @@ async function main() {
     console.log('Lexing!');
     let lexInput = await fetch('test.txt').then((x) => x.text());
     let tokens = lexer.lex(lexInput);
-    console.log('tokens:', tokens);
+    console.log('tokens:')
+    for (let tok of tokens) {
+        console.log(' ', tok);
+    }
 
     // Load modules
     let mod = await wasm.loadModule('game', loadedModules);

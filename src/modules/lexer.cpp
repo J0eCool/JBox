@@ -1,17 +1,16 @@
 /**IT_START**/
 
-// Reminder of variant syntax
-// type Literal = variant {
-//     String {
-//         name: string;
-//     }
-//     Num {
-//         val: s32;
-//     }
-// }
+type TokenKind = enum {
+    Identifier,
+    Number,
+    Whitespace,
+    Newline,
+    Symbol,
+}
 
 type Token = struct {
     text: string;
+    kind: TokenKind;
     line: s32;
     column: s32;
 }
@@ -28,14 +27,15 @@ export {
 #include <string>
 #include <vector>
 
-enum TokenKind {
+enum CharKind {
     none,
     identifier,
+    numeric,
     whitespace,
     breaking,
 };
 
-TokenKind kindOf(char c) {
+CharKind kindOf(char c) {
     switch (c) {
     case ' ':
     case '\t':
@@ -45,8 +45,27 @@ TokenKind kindOf(char c) {
     case ')':
     case ';':
         return breaking;
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+        return numeric;
     default:
         return identifier;
+    }
+}
+
+TokenKind tokenKind(const char* str) {
+    if (str[0] == '\n') {
+        return TokenKind::Newline;
+    }
+    auto charKind = kindOf(str[0]);
+    switch (charKind) {
+    case whitespace:
+        return TokenKind::Whitespace;
+    case numeric:
+        return TokenKind::Number;
+    case identifier:
+    default:
+        return TokenKind::Identifier;
     }
 }
 
@@ -56,7 +75,7 @@ ITBuffer* lex(const char* input) {
     int startIdx = 0;
     int line = 1;
     int column = 1;
-    TokenKind curKind = none;
+    CharKind curKind = none;
     auto addToken = [&](int idx) {
         int len = idx - startIdx;
         if (len <= 0) {
@@ -65,7 +84,8 @@ ITBuffer* lex(const char* input) {
         char* str = new char[len+1];
         strncpy(str, input+startIdx, len);
         str[len] = 0;
-        tokens.push_back(Token(str, line, column));
+        auto kind = tokenKind(str);
+        tokens.push_back(Token(str, kind, line, column));
 
         column += len;
         curKind = none;
