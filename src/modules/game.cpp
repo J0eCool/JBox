@@ -17,6 +17,9 @@ import input {
     func registerOnMouseMove(func(MouseEvent));
 }
 
+import math {
+    func rand() -> f32;
+}
 import time {
     func now() -> f32;
 }
@@ -33,12 +36,9 @@ export {
 #include <string>
 #include <vector>
 
-Vec red(1.0, 0.0, 0.0);
-Vec green(0.0, 1.0, 0.0);
-Vec blue(0.0, 0.0, 1.0);
-Vec yellow(1.0, 1.0, 0.0);
-Vec cyan(0.0, 1.0, 1.0);
-Vec magenta(1.0, 0.0, 1.0);
+float randBool(float p) {
+    return math::rand() < p;
+}
 
 FileLoader loader;
 
@@ -53,21 +53,20 @@ class WorldScene {
     void* verts;
     void* normals;
 
-    struct Cube {
-        Vec pos;
-        Vec size;
-        Vec color;
-    };
-    std::vector<Cube> cubes;
-
     const std::string fragUrl = "shaders/simple3d.frag";
     const std::string vertUrl = "shaders/simple3d.vert";
+
+    static const int gridSize = 24;
+    static const int numGridElems = gridSize * gridSize * gridSize;
+    bool grid[numGridElems];
 public:
-    float dist = 5.0;
+    float dist = 36;
     float rot = 0.0;
     WorldScene() {
         loader.beginFetch(fragUrl);
         loader.beginFetch(vertUrl);
+
+        initializeGrid();
     }
 
     void onFilesLoaded() {
@@ -85,11 +84,47 @@ public:
         auto norm = computeNormals(cube);
         verts = createVbo(cube);
         normals = createVbo(norm);
+    }
 
-        cubes.push_back(Cube { Vec(0, 0.5, 0.75), Vec(1, 1, 1), Vec(1, 0, 0) });
-        cubes.push_back(Cube { Vec(1.5, 0, 1), Vec(1, 1, 2), Vec(0, 1, 0) });
-        cubes.push_back(Cube { Vec(-1.5, -0.5, 1), Vec(1, 1, 1), Vec(0, 1, 1) });
-        cubes.push_back(Cube { Vec(0, 0, 0), Vec(5, 5, 0.5), Vec(0.7, 0.7, 0.7) });
+    float initProb = 0.34f;
+    int deadLo = 13;
+    int deadHi = 24;
+    int liveLo = 9;
+    int liveHi = 21;
+    void initializeGrid() {
+        for (int i = 0; i < numGridElems; ++i) {
+            grid[i] = randBool(initProb);
+        }
+    }
+
+    bool nextGridStep(int idx) {
+        int nNeighbors = 0;
+        for (int dx = -1; dx <= 1; ++dx) {
+            for (int dy = -1; dy <= 1; ++dy) {
+                for (int dz = -1; dz <= 1; ++dz) {
+                    int i = idx + dx + gridSize * (dy + gridSize * dz);
+                    i = (i + numGridElems) % numGridElems;
+                    nNeighbors += grid[i];
+                }
+            }
+        }
+        bool alive = grid[idx];
+        // if (!alive) {
+        //     return randBool((nNeighbors + 1) / 270.0f);
+        // }
+        if (!alive) {
+            return nNeighbors >= deadLo && nNeighbors <= deadHi;
+        } else {
+            return nNeighbors >= liveLo && nNeighbors <= liveHi;
+        }
+    }
+
+    void frame() {
+        bool nextGrid[numGridElems];
+        for (int i = 0; i < numGridElems; ++i) {
+            nextGrid[i] = nextGridStep(i);
+        }
+        memcpy(grid, nextGrid, numGridElems);
     }
 
     void draw() {
@@ -116,12 +151,21 @@ public:
         auto viewProj = proj * view;
         auto lightPos = cameraPos + Vec(0, 0, 1);
         gl::uniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
-        for (auto& cube : cubes) {
-            auto model = Mat::translate(cube.pos) * Mat::scale(cube.size);
+
+        for (int i = 0; i < numGridElems; ++i) {
+            if (!grid[i]) {
+                continue;
+            }
+            int x = i % gridSize;
+            int y = (i / gridSize) % gridSize;
+            int z = i / gridSize / gridSize;
+            auto h = gridSize / 2.0f;
+            auto pos = Vec(x - h, y - h, z - h);
+            auto model = Mat::translate(pos);
             auto mvp = viewProj * model;
             gl::uniformMatrix4fv(modelViewProjLoc, false, &mvp);
             gl::uniformMatrix4fv(modelLoc, false, &model);
-            gl::uniform3f(colorLoc, cube.color.x, cube.color.y, cube.color.z);
+            gl::uniform3f(colorLoc, 1.0f, 0.0f, 0.0f);
             gl::drawArrays(gl_TRIANGLES, 0, 36);
         }
     }
@@ -199,10 +243,18 @@ public:
         gl::useProgram(program);
 
         char strBuff[128];
-        snprintf(strBuff, sizeof(strBuff), "dist = %f", world.dist);
-        drawText(Vec(50, 50), strBuff);
-        snprintf(strBuff, sizeof(strBuff), "rot  = %f", world.rot);
-        drawText(Vec(50, 80), strBuff);
+        float yPos = 50.0f;
+        auto line = [&](const char* label, int val) {
+            snprintf(strBuff, sizeof(strBuff), "%s: %d", label, val);
+            drawText(Vec(50, yPos), strBuff);
+            yPos += 22;
+        };
+
+        line("initProb", 100*world.initProb);
+        line("deadLo  ", world.deadLo);
+        line("deadHi  ", world.deadHi);
+        line("liveLo  ", world.liveLo);
+        line("liveHi  ", world.liveHi);
     }
 
     void drawText(Vec pos, std::string str) {
@@ -230,8 +282,8 @@ public:
             gl::bufferSubData(gl_ARRAY_BUFFER, 0, &uvs);
             gl::vertexAttribPointer(texUvLoc, 2, gl_FLOAT, false, 0, 0);
 
-            auto cur = pos + Vec(18*i, 0);
-            auto matrix = projection * Mat::translate(cur) * Mat::scale(18, 24);
+            auto cur = pos + Vec(12*i, 0);
+            auto matrix = projection * Mat::translate(cur) * Mat::scale(12, 18);
             gl::uniformMatrix4fv(matrixLoc, false, &matrix);
             gl::drawArrays(gl_TRIANGLES, 0, 12);
         }
@@ -280,6 +332,18 @@ void init(int w, int h) {
     lastFrame = time::now();
 }
 
+int axis(char lo, char hi) {
+    return isHeld[(int)hi] - isHeld[(int)lo];
+}
+bool isDown(char c) {
+    auto ret = isHeld[(int)c];
+    isHeld[(int)c] = false;
+    return ret;
+}
+int isDownAxis(char lo, char hi) {
+    return isDown(hi) - isDown(lo);
+}
+
 bool didLoadFiles = false;
 void frame() {
     if (!didLoadFiles) {
@@ -294,11 +358,26 @@ void frame() {
     auto t = time::now();
     auto dt = t - lastFrame;
     lastFrame = t;
-    int dx = isHeld[(int)'d'] - isHeld[(int)'a'];
-    int dy = isHeld[(int)'s'] - isHeld[(int)'w'];
+    if (isDown('r')) {
+        world.initializeGrid();
+    }
+    world.initProb += 0.01 * isDownAxis('n', 'm');
+    world.deadLo += isDownAxis('y', 'h');
+    world.deadHi += isDownAxis('u', 'j');
+    world.liveLo += isDownAxis('i', 'k');
+    world.liveHi += isDownAxis('o', 'l');
+
+    int dx = axis('a', 'd');
+    int dy = axis('w', 's');
     world.rot += dx * TAU * 0.3 * dt;
     world.dist += dy * 2.5 * dt;
     if (world.dist < 1.25) { world.dist = 1.25; }
+
+    static int nFrame = 0;
+    nFrame++;
+    if (nFrame % 5 == 0) {
+        world.frame();
+    }
 
     world.draw();
     gui.draw();

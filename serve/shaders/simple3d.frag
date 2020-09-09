@@ -8,7 +8,7 @@ varying vec3 vNormal;
 
 void main() {
     float ambient = 0.2;
-    float brightness = 5.0;
+    float brightness = 40.0;
 
     vec3 normal = normalize(vNormal);
     vec3 delta = uLightPos - vPos;
