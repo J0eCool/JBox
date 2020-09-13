@@ -159,6 +159,7 @@ let wasm = {
             'game': gameComponent,
             'lexer': lexerComponent,
             'life': lifeComponent,
+            'parser': parserComponent,
             'terminal': terminalComponent,
         };
         return components[name].instantiate(imports).then((mod) => {
@@ -192,10 +193,10 @@ async function main() {
     console.log('Lexing!');
     let lexInput = await fetch('test.txt').then((x) => x.text());
     let tokens = lexer.lex(lexInput);
-    console.log('tokens:')
-    for (let tok of tokens) {
-        console.log(' ', tok);
-    }
+    let parser = await wasm.loadModule('parser', loadedModules);
+    console.log('Parsing!');
+    let ast = parser.parse(tokens);
+    console.log(ast);
 
     // Load modules
     let mod = await wasm.loadModule('game', loadedModules);

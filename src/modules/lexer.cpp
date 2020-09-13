@@ -69,7 +69,7 @@ TokenKind tokenKind(const char* str) {
     }
 }
 
-ITBuffer* lex(const char* input) {
+Buffer<Token>* lex(const char* input) {
     std::vector<Token> tokens;
     int inputLen = strlen(input);
     int startIdx = 0;

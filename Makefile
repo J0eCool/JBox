@@ -3,6 +3,7 @@ FILES=\
 out/circles.wasm \
 out/game.wasm \
 out/lexer.wasm \
+out/parser.wasm \
 out/life.wasm \
 out/terminal.wasm \
 

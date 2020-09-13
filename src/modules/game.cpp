@@ -86,11 +86,11 @@ public:
         normals = createVbo(norm);
     }
 
-    float initProb = 0.34f;
-    int deadLo = 13;
-    int deadHi = 24;
-    int liveLo = 9;
-    int liveHi = 21;
+    float initProb = 0.48f;
+    int deadLo = 16;
+    int deadHi = 18;
+    int liveLo = 12;
+    int liveHi = 27;
     void initializeGrid() {
         for (int i = 0; i < numGridElems; ++i) {
             grid[i] = randBool(initProb);
@@ -231,7 +231,7 @@ public:
         gl::texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_NEAREST);
         gl::texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MAG_FILTER, gl_NEAREST);
         gl::texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, image->width, image->height, 0,
-            gl_RGBA, gl_UNSIGNED_BYTE, image->pixels);
+            gl_RGBA, gl_UNSIGNED_BYTE, (Buffer<unsigned char>*)image->pixels);
     }
 
     void draw() {
