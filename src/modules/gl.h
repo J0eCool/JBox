@@ -1,13 +1,14 @@
 /**IT_START**/
 
+type ShaderId = any
 import gl {
     // shaders
-    func createShader(u32) -> any;
-    func shaderSource(any, string);
-    func compileShader(any);
-    func deleteShader(any);
-    func getShaderParameter(any, u32) -> u1;
-    func getShaderInfoLog(any) -> string;
+    func createShader(u32) -> ShaderId;
+    func shaderSource(ShaderId, string);
+    func compileShader(ShaderId);
+    func deleteShader(ShaderId);
+    func getShaderParameter(ShaderId, u32) -> u1;
+    func getShaderInfoLog(ShaderId) -> string;
 
     // shader programs
     func createProgram() -> any;
