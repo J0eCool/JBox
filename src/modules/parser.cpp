@@ -15,11 +15,21 @@ type Token = struct {
     column: s32;
 }
 
+type SExpr = variant {
+    Identifier {
+        name: string;
+    }
+    List {
+        elems: array(SExpr);
+    }
+}
+
 import input {
-    func log(s32, Token);
+    func log(SExpr);
 }
 export {
-    func parse(array(Token)) -> array(string);
+    func parse(array(Token)) -> SExpr;
+    func roundtrip(SExpr);
 }
 
 /**IT_END**/
@@ -27,10 +37,13 @@ export {
 #include <string>
 #include <vector>
 
-Buffer<const char*>* parse(Buffer<Token> *tokens) {
-    input::log(tokens->size(), nullptr);
-    for (int i = 0; i < tokens->size(); ++i) {
-        input::log(i, &(tokens->ref(i)));
-    }
-    return new Buffer<const char*>(2, (const char*[]) { "Wow", "jeex" });
+SExpr* parse(Buffer<Token>* tokens) {
+    return new List(new Buffer<SExpr*>(2, (SExpr*[]){
+        new Identifier("wow"),
+        new Identifier("dang"),
+    }));
+}
+
+void roundtrip(SExpr* expr) {
+    input::log(expr);
 }

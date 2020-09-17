@@ -59,9 +59,7 @@ function mouseEventWrapper(callback) {
     };
 }
 let input = {
-    log(msg, x) {
-        console.log(msg, x);
-    },
+    log: console.log,
     registerOnKeyDown(callback) {
         document.onkeydown = keyboardEventWrapper(callback);
     },
@@ -197,6 +195,7 @@ async function main() {
     console.log('Parsing!');
     let ast = parser.parse(tokens);
     console.log(ast);
+    parser.roundtrip(ast);
 
     // Load modules
     let mod = await wasm.loadModule('game', loadedModules);
