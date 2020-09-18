@@ -189,13 +189,13 @@ let loadedModules = {
 async function main() {
     let lexer = await wasm.loadModule('lexer', loadedModules);
     console.log('Lexing!');
-    let lexInput = await fetch('test.txt').then((x) => x.text());
+    let lexInput = await fetch('parser.itl').then((x) => x.text());
     let tokens = lexer.lex(lexInput);
     let parser = await wasm.loadModule('parser', loadedModules);
     console.log('Parsing!');
     let ast = parser.parse(tokens);
     console.log(ast);
-    parser.roundtrip(ast);
+    parser.prettyPrint(ast);
 
     // Load modules
     let mod = await wasm.loadModule('game', loadedModules);

@@ -63,6 +63,9 @@ TokenKind tokenKind(const char* str) {
         return TokenKind::Whitespace;
     case numeric:
         return TokenKind::Number;
+    case breaking:
+        // newlines are breaking, but we already checked that special-case
+        return TokenKind::Symbol;
     case identifier:
     default:
         return TokenKind::Identifier;
