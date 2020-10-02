@@ -29,7 +29,7 @@ import input {
 }
 export {
     func parse(array(Token)) -> SExpr;
-    func prettyPrint(SExpr);
+    func prettyPrint(SExpr) -> SExpr;
 }
 
 /**IT_END**/
@@ -96,12 +96,6 @@ class Parser {
             curLine.push_back(new Identifier(tok.text));
         }
         endLine();
-        if (lines.size() == 1) {
-            if (auto list = lines[0]->as_List()) {
-                input::log("YO WHAT)");
-                return list;
-            }
-        }
         return fromVec(lines);
     }
 
@@ -142,9 +136,7 @@ public:
 };
 
 SExpr* parse(Buffer<Token>* tokens) {
-    auto ret = Parser(*tokens).parse();
-    prettyPrint(ret);
-    return ret;
+    return Parser(*tokens).parse();
 }
 
 class Printer {
@@ -191,6 +183,7 @@ class Printer {
 public:
     Printer(SExpr* expr) : text(""), indent(0) {
         if (auto list = expr->as_List()) {
+            input::log("Toplevel list");
             // special-case a top-level list
             auto &elems = *list->elems;
             for (int i = 0; i < elems.size(); ++i) {
@@ -198,6 +191,7 @@ public:
                 text += "\n";
             }
         } else {
+            input::log("Toplevel elem");
             emit(expr);
         }
     }
@@ -206,6 +200,7 @@ public:
     }
 };
 
-void prettyPrint(SExpr* expr) {
+SExpr* prettyPrint(SExpr* expr) {
     input::log(Printer(expr).str().c_str());
+    return expr;
 }

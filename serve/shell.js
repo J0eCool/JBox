@@ -195,7 +195,8 @@ async function main() {
     console.log('Parsing!');
     let ast = parser.parse(tokens);
     console.log(ast);
-    parser.prettyPrint(ast);
+    let p = parser.prettyPrint(ast);
+    console.log('postparse:', p);
 
     // Load modules
     let mod = await wasm.loadModule('game', loadedModules);
