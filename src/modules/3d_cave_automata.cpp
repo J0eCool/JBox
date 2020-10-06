@@ -42,6 +42,135 @@ float randBool(float p) {
 
 FileLoader loader;
 
+class WorldScene {
+    void* program;
+    int posLoc;
+    int normalLoc;
+    void* modelViewProjLoc;
+    void* modelLoc;
+    void* colorLoc;
+    void* lightPosLoc;
+    void* verts;
+    void* normals;
+
+    const std::string fragUrl = "shaders/simple3d.frag";
+    const std::string vertUrl = "shaders/simple3d.vert";
+
+    static const int gridSize = 24;
+    static const int numGridElems = gridSize * gridSize * gridSize;
+    bool grid[numGridElems];
+public:
+    float dist = 36;
+    float rot = 0.0;
+    WorldScene() {
+        loader.beginFetch(fragUrl);
+        loader.beginFetch(vertUrl);
+
+        initializeGrid();
+    }
+
+    void onFilesLoaded() {
+        auto vertText = loader.read(vertUrl);
+        auto fragText = loader.read(fragUrl);
+        program = loadProgram(vertText.c_str(), fragText.c_str());
+        posLoc = gl::getAttribLocation(program, "aPos");
+        normalLoc = gl::getAttribLocation(program, "aNormal");
+        modelViewProjLoc = gl::getUniformLocation(program, "uModelViewProj");
+        modelLoc = gl::getUniformLocation(program, "uModel");
+        colorLoc = gl::getUniformLocation(program, "uColor");
+        lightPosLoc = gl::getUniformLocation(program, "uLightPos");
+
+        auto cube = cubeModel();
+        auto norm = computeNormals(cube);
+        verts = createVbo(cube);
+        normals = createVbo(norm);
+    }
+
+    float initProb = 0.48f;
+    int deadLo = 16;
+    int deadHi = 18;
+    int liveLo = 12;
+    int liveHi = 27;
+    void initializeGrid() {
+        for (int i = 0; i < numGridElems; ++i) {
+            grid[i] = randBool(initProb);
+        }
+    }
+
+    bool nextGridStep(int idx) {
+        int nNeighbors = 0;
+        for (int dx = -1; dx <= 1; ++dx) {
+            for (int dy = -1; dy <= 1; ++dy) {
+                for (int dz = -1; dz <= 1; ++dz) {
+                    int i = idx + dx + gridSize * (dy + gridSize * dz);
+                    i = (i + numGridElems) % numGridElems;
+                    nNeighbors += grid[i];
+                }
+            }
+        }
+        bool alive = grid[idx];
+        // if (!alive) {
+        //     return randBool((nNeighbors + 1) / 270.0f);
+        // }
+        if (!alive) {
+            return nNeighbors >= deadLo && nNeighbors <= deadHi;
+        } else {
+            return nNeighbors >= liveLo && nNeighbors <= liveHi;
+        }
+    }
+
+    void frame() {
+        bool nextGrid[numGridElems];
+        for (int i = 0; i < numGridElems; ++i) {
+            nextGrid[i] = nextGridStep(i);
+        }
+        memcpy(grid, nextGrid, numGridElems);
+    }
+
+    void draw() {
+        gl::enable(gl_DEPTH_TEST);
+        gl::enable(gl_CULL_FACE);
+        gl::clearColor(0.1, 0, 0, 1);
+        gl::clear(gl_COLOR_BUFFER_BIT | gl_DEPTH_BUFFER_BIT);
+
+        gl::useProgram(program);
+
+        gl::enableVertexAttribArray(posLoc);
+
+        gl::bindBuffer(gl_ARRAY_BUFFER, verts);
+        gl::vertexAttribPointer(posLoc, 3, gl_FLOAT, false, 0, 0);
+        gl::bindBuffer(gl_ARRAY_BUFFER, normals);
+        gl::vertexAttribPointer(normalLoc, 3, gl_FLOAT, false, 0, 0);
+
+        // auto camera = Mat::rotateX(PI/2) * Mat::translate(0, -dist, 2);
+        auto cameraPos = Vec::polar2d(-rot, dist) + Vec(0, 0, 2);
+        // auto camera = Mat::translate(cameraPos) * Mat::rotateX(PI / 2);// * Mat::rotateY(rot);
+        auto camera = Mat::lookAt(cameraPos, Vec(0, 0, 1));
+        auto view = camera.inverse();
+        auto proj = Mat::perspective(70, 1.333, 0.1, 100.0);
+        auto viewProj = proj * view;
+        auto lightPos = cameraPos + Vec(0, 0, 1);
+        gl::uniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+
+        for (int i = 0; i < numGridElems; ++i) {
+            if (!grid[i]) {
+                continue;
+            }
+            int x = i % gridSize;
+            int y = (i / gridSize) % gridSize;
+            int z = i / gridSize / gridSize;
+            auto h = gridSize / 2.0f;
+            auto pos = Vec(x - h, y - h, z - h);
+            auto model = Mat::translate(pos);
+            auto mvp = viewProj * model;
+            gl::uniformMatrix4fv(modelViewProjLoc, false, &mvp);
+            gl::uniformMatrix4fv(modelLoc, false, &model);
+            gl::uniform3f(colorLoc, 1.0f, 0.0f, 0.0f);
+            gl::drawArrays(gl_TRIANGLES, 0, 36);
+        }
+    }
+} world;
+
 class UiScene {
     void* program;
     int posLoc;
@@ -221,6 +350,7 @@ void frame() {
         if (loader.anyPending()) {
             return;
         }
+        world.onFilesLoaded();
         gui.onFilesLoaded();
         didLoadFiles = true;
     }
@@ -228,9 +358,27 @@ void frame() {
     auto t = time::now();
     auto dt = t - lastFrame;
     lastFrame = t;
+    if (isDown('r')) {
+        world.initializeGrid();
+    }
+    world.initProb += 0.01 * isDownAxis('n', 'm');
+    world.deadLo += isDownAxis('y', 'h');
+    world.deadHi += isDownAxis('u', 'j');
+    world.liveLo += isDownAxis('i', 'k');
+    world.liveHi += isDownAxis('o', 'l');
 
     int dx = axis('a', 'd');
     int dy = axis('w', 's');
+    world.rot += dx * TAU * 0.3 * dt;
+    world.dist += dy * 2.5 * dt;
+    if (world.dist < 1.25) { world.dist = 1.25; }
 
+    static int nFrame = 0;
+    nFrame++;
+    if (nFrame % 5 == 0) {
+        world.frame();
+    }
+
+    world.draw();
     gui.draw();
 }

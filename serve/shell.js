@@ -32,11 +32,11 @@ async function parserTest() {
 async function main() {
     // await parserTest();
 
-    let mod = await wasm.loadModule('game', loadedModules);
-    mod.init(resolution.width, resolution.height);
+    let game = await wasm.loadModule('game', loadedModules);
+    game.init(resolution.width, resolution.height);
 
     function frame() {
-        mod.frame();
+        game.frame();
 
         requestAnimationFrame(frame);
     }

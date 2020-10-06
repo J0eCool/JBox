@@ -24,7 +24,6 @@ import files {
 #include <string>
 
 class FileLoader {
-    // static class I guess, because you'll probably never need two?
     std::set<int> openRequests;
     std::map<std::string, TextResponse*> textResponses;
 
